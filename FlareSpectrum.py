@@ -5,29 +5,31 @@ def goes_class_lookup(flare_specifier: str) -> np.float64:
     lookup = {
         'C' : 1e-6,
         'M' : 1e-5,
-        'X' : 1e-6
+        'X' : 1e-4
     }
-    ch, mul = flare_specifier[0], float(flare_specifier[1:])
+    ch, mul = flare_specifier[0].upper(), float(flare_specifier[1:])
     return lookup[ch] * mul
 
 
 class BattagliaParameters:
     # see Battaglia et al., https://arxiv.org/abs/astro-ph/0505154v1
     # equations: 11, 12, 8
-    def __init__(self, goes_intensity):
-        pt_p1 = math.log(goes_intensity)/math.log(10)
-        pt_p2 = math.log(3.5) / math.log(10) - 12
+    def __init__(self, goes_flux):
+        pt_p1 = np.log(goes_flux)/np.log(10)
+        pt_p2 = np.log(3.5) / np.log(10) - 12
         self.plasma_temp = (1 / 0.33) * (pt_p1 - pt_p2)                         # MK
 
-        self.emission_measure = (goes_intensity / 3.6 * 1e50) ** (1/0.92)       # particles^2 / cm3
-        self.flux_35kev = (goes_intensity / (1.8e-5)) ** (1/0.83)               # photon / (s cm2 keV)
+        self.emission_measure = (goes_flux / 3.6 * 1e50) ** (1/0.92)       # particles^2 / cm3
+        self.reference_energy = 35.0                                            # keV
+        self.reference_flux = (goes_flux / (1.8e-5)) ** (1/0.83)           # photon / (s cm2 keV)
 
-        if goes_intensity < goes_class_lookup('C2'):
-            self.spectral_index = 2.04 * self.flux_35kev**(-0.16)               # unitless
+        if goes_flux < goes_class_lookup('C2'):
+            self.spectral_index = 2.04 * self.reference_flux**(-0.16)               # unitless
         else:
-            self.spectral_index = 3.60 * self.flux_35kev**(-0.16)               # unitless
+            self.spectral_index = 3.60 * self.reference_flux**(-0.16)               # unitless
 
     def gen_vth_params(self) -> (float, float):
+        K_B = 8.627e-8  # keV/K
         '''
         generate plasma temperature, emission measure in units appropriate for idl function f_vth.
         returns: (plasma_temp, emission_measure) in units of (keV, 1e49 * particles2 / cm3)
@@ -40,13 +42,24 @@ class BattagliaParameters:
 class FlareSpectrum:
     # NB: this might not be the best way to organize this, it's just how i first thought to do it
     @classmethod
-    def make_with_battaglia_scaling(goes_flux: np.float64, start_energy: np.float64,
-                                    end_energy: np.float64, de: np.float64):
+    def make_with_battaglia_scaling(cls, goes_flux: np.float64, start_energy: np.float64,
+            end_energy: np.float64, de: np.float64, rel_abun: np.float64 = 1.0):
         ''' goes flux in W/m2, energies in keV '''
-        bp = BattagliaParameters(goes_intensity)
-        pass
+        energies = np.arange(start_energy, end_energy + de, de)     # keV
+        bp = BattagliaParameters(goes_flux)
 
+        good_pt, good_em = bp.gen_vth_params()                      # (keV, 1e49particle2 / cm3)
+        thermal_spec = f_vth_bridge(
+                energies, good_em, good_pt, rel_abun)               # photon / (s cm2 keV)
+        nonthermal_spec = power_law_with_pivot(energies, bp.reference_flux, bp.spectral_index, bp.reference_energy)
 
-    def __init__(self, energies: np.ndarray, flare: np.ndarray):
+        return cls(energies, thermal_spec, nonthermal_spec)
+
+    def __init__(self, energies: np.ndarray, thermal: np.ndarray, nonthermal: np.ndarray):
         self.energies = energies
-        self.flare = flare
+        self.thermal = thermal
+        self.nonthermal = nonthermal
+
+    @property
+    def flare(self) -> np.ndarray:
+        return self.thermal + self.nonthermal

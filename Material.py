@@ -10,32 +10,38 @@ class Material:
         self.attenuation_data = attenuation_data
         self.thickness = attenuation_thickness
 
+    @property
+    def area(self):
+        return (self.diameter / 2)**2 * np.pi
+
     def generate_overall_response_matrix_given(self, incident_spectrum: FlareSpectrum) -> np.ndarray:
-        dim = incident_spectrum.shape[0]
+        dim = incident_spectrum.energies.shape[0]
         mat = np.identity(dim, dtype=np.float64)
         # everything is diagonal except Compton scattering, so the matrices commute
         # i.e. multiplication order doesn't matter
-        for k in self.attenuation_data.keys():
-            mat *= self.generate_modifying_matrix_for(k, incident_spectrum)
+        for k in self.attenuation_data.attenuations.keys():
+            mat = np.matmul(self.generate_modifying_matrix_for(k, incident_spectrum), mat)
 
         return mat
 
-    def generate_modifying_matrix_for(self, data_type: int, incident_spectrum: FlareSpectrum) -> np.ndarray:
+    def generate_modifying_matrix_for(self, mechanism_type, incident_spectrum: FlareSpectrum) -> np.ndarray:
         modify_gen_lookup = {
-            AttenuationType.PHOTOELECTRIC_ABSORPTION: self._gen_phot_ray,
-            AttenuationType.RAYLEIGH: self._gen_phot_ray,
+            AttenuationType.PHOTOELECTRIC_ABSORPTION: self._gen_photo,
+            AttenuationType.RAYLEIGH: self._gen_rayleigh,
             AttenuationType.COMPTON: self._gen_compton,
         }
-        return modify_gen_lookup(incident_spectrum)
+        return modify_gen_lookup[mechanism_type](incident_spectrum)
 
-    def _gen_phot_ray(self, which: int, incident_spectrum: FlareSpectrum) -> np.ndarray:
-        interpolated_attenuation = self.attenuation_data.interpolate_from(incident_spectrum)
-        att_dat = interpolated_attenuation[which]
-        exponent = -1 * att_dat * self.mass_density * self.thickness
-        attenuate = np.exp(exponent)
-
-        # return attenuation as a matrix rather than a vector
-        return np.diag(attenuate)
+    def _gen_phot_ray(self, which, incident_spectrum: FlareSpectrum) -> np.ndarray:
+        interpolated_attenuations = self.attenuation_data.interpolate_from(incident_spectrum)
+        relevant_attenuation = interpolated_attenuations.attenuations[which]
+        exponent = -1 * relevant_attenuation * self.mass_density * self.thickness
+        actual_attenuation = np.exp(exponent)
+#        if self.mass_density == 5.1:
+#            for i in range(actual_attenuation.size):
+#                print(f"energy {incident_spectrum.energies[i]}\t att {actual_attenuation[i]}")
+#            input()
+        return np.diag(actual_attenuation)
 
     def _gen_photo(self, incident_spectrum: FlareSpectrum) -> np.ndarray:
         return self._gen_phot_ray(AttenuationType.PHOTOELECTRIC_ABSORPTION, incident_spectrum)

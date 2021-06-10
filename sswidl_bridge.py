@@ -23,7 +23,7 @@ def f_vth_bridge(energy_array, emission_measure, plasma_temperature, relative_ab
     '''
     NB: energies are in keV
         *** emission measure is in (1e49 cm-3) ***
-        *** plasma_temperature is in keV *** 
+        *** plasma_temperature is in keV ***
 
     the wonky units are to match what IDL has. :(
     '''
@@ -72,6 +72,7 @@ def run_sswidl_script(script_name, *args, debug=False):
         return out[data_start_idx:data_end_idx]
     except ValueError:
         loud_print("The IDL script likely didn't run. Make sure you're launching from tcsh (shudders)", file=sys.stderr)
+        input("Press any key to continue")
         raise
 
 
@@ -94,7 +95,7 @@ if __name__ == '__main__':
     ENG_END = 300.0         # keV
     DE = 0.1                # keV
     goes_intensity = 1e-5   # W / m2
-    
+
     bp = BattagliaParameters(goes_intensity)
     energy_vec = np.arange(ENG_START, ENG_END + DE, DE, dtype=np.float64)
     print(energy_vec)

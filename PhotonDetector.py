@@ -10,8 +10,8 @@ class Sipm3000(PhotonDetector):
     DELTA_E = 0.4
 
     def generate_energy_resolution_given(self, incident_spectrum: FlareSpectrum) -> np.ndarray:
-        # fwhm to standard deviation
-        sd = 2 * np.sqrt(2 * np.log(2)) * Sipm3000.DELTA_E
+        fwhm = self.DELTA_E * incident_spectrum.energies
+        sd = fwhm / (2 * np.sqrt(2 * np.log(2)))
         # number of rows
         dim = incident_spectrum.energies.shape[0]
         res_mat = np.zeros((dim, dim))
@@ -21,9 +21,7 @@ class Sipm3000(PhotonDetector):
         return res_mat
 
 def gaussian_row(dim, sd, idx):
-    # standard deviation is in percentage
-    sd = dim * sd
     space = np.arange(0, dim, dtype=np.float64)
-    prefac = 1
+    prefac = 1 / (sd * np.sqrt(2 * np.pi))
     exponent = -(space - idx)**2 / (2 * sd*sd)
     return  prefac * np.exp(exponent)

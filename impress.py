@@ -1,49 +1,60 @@
 import numpy as np
-import os
-import sys
 
-from impress_constants import *
-from Material import Material
-from DetectorStack import DetectorStack
+import impress_constants as ic
+from AttenuationData import AttenuationData
+from DetectorStack import HafxStack
+from FlareSpectrum import FlareSpectrum, goes_class_lookup
 from Instrument import Instrument
+from Material import Material
+from PhotonDetector import Sipm3000
 
 def stack_with_thickness(al_thick):
-    material_order = [AL, TE, BE, CEBR3]
+    material_order = [ic.AL, ic.TE, ic.BE, ic.CEBR3]
     materials = []
     for mat_name in material_order:
         # use passed-in thickness if it's aluminum
-        thick = THICKNESSES[mat_name] if mat_name != AL else al_thick   #cm
-        rho = DENSITIES[mat_name]                                       # g / cm3
-        atten_dat = AttenuationData.from_nist_file(ATTEN_FILES[mat_name])
-        materials.append(Material(diameter, thick, rho, atten_dat))
-    return materials
+        thick = ic.THICKNESSES[mat_name] if mat_name != ic.AL else al_thick   #cm
+        rho = ic.DENSITIES[mat_name]                                          # g / cm3
+        atten_dat = AttenuationData.from_nist_file(ic.ATTEN_FILES[mat_name])
+        materials.append(Material(ic.DIAMETER, thick, rho, atten_dat))
+    return HafxStack(materials, Sipm3000())
 
 def build_impress(aluminum_thicknesses):
     # order is: Al, Teflon, Be, CeBr3
     detector_stacks = []
-    for al_thick in aluminum_thicknesses:
-        detector_stacks.append(stack_with_thickness(al_thick))
+    for this_thickness in aluminum_thicknesses:
+        detector_stacks.append(stack_with_thickness(this_thickness))
     return Instrument(detector_stacks)
 
-def gen_flare_spectrum(goes_flux):
-    pass
-    # TODO:
-    # implement Battaglia scaling class here
-    # get output from f_vth from Battaglia temperature
-    # get output from f_1pow for Battaglia 35 keV flux
-    # sum them and return
+def impress_flare_spectrum(goes_flux, e_start, e_end, de):
+    try:
+        return impress_flare_spectrum.hash[goes_flux]
+    except (KeyError, AttributeError) as e:
+        spec = FlareSpectrum.make_with_battaglia_scaling(goes_flux, e_start, e_end, de)
+        if isinstance(e, KeyError):
+            impress_flare_spectrum.hash[goes_flux] = spec
+        else:
+            impress_flare_spectrum.hash = { goes_flux : spec }
+        return spec
 
-def main():
-    goes_flux = 1e-5                        # W / cm2
-    al_thick = [10, 25, 120, 190] * 1e-4    # cm
-    e_start = 1                             # keV
-    e_end = 300                             # keV
+def test():
+    goes_class = 'M1'
+    goes_flux = goes_class_lookup(goes_class)       # W / cm2
+    al_thicks = np.array([10, 20, 120, 190]) * 1e-4 # cm
+    e_start = 1                                     # keV
+    e_end = 300                                     # keV
+    de = 0.1                                        # keV
 
-    impress = build_impress(al_thick)
-    flare_spectrum = gen_flare_spectrum(e_start, e_end, goes_flux)
-    responses = []
+    impress = build_impress(al_thicks)
+    flare_spectrum = impress_flare_spectrum(goes_flux, e_start, e_end, de)
+    count_vectors = []
     for det in impress.detector_stacks:
-        responses.append(det.generate_detector_response_to(flare))
-    # ...
+        response = det.generate_detector_response_to(flare_spectrum)
+        count_vectors.append(np.matmul(response, flare_spectrum.flare))
 
-if __name__ == '__main__': main()
+    out = [flare_spectrum.energies] + [e for e in count_vectors] + [flare_spectrum.flare]
+    np.savetxt('flare_out.tab', np.transpose(out))
+#     total = np.trapz(count_vectors, x=flare_spectrum.energies, dx=de, axis=1) * impress.detector_stacks[0].area
+#     print(f"Total counts: {total}")
+
+if __name__ == '__main__': test()

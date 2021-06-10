@@ -1,0 +1,7 @@
+*.swp
+.DS_Store
+*.csv
+*.pdf
+__pycache__
+*.pyc
+*.tab
