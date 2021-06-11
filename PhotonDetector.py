@@ -3,20 +3,22 @@ from FlareSpectrum import FlareSpectrum
 
 class PhotonDetector:
     def generate_energy_resolution_given(self, incident_spectrum: FlareSpectrum) -> np.ndarray:
-        raise NotImplementedError
+        raise NotImplementedError("Subclass PhotonDetector to implement detector-specific behavior.")
 
 class Sipm3000(PhotonDetector):
     # guess for now
     DELTA_E = 0.4
 
     def generate_energy_resolution_given(self, incident_spectrum: FlareSpectrum) -> np.ndarray:
-        fwhm = self.DELTA_E * incident_spectrum.energies
+        step_size = incident_spectrum.energies[1] - incident_spectrum.energies[0]
+        fwhm = self.DELTA_E * incident_spectrum.energies / step_size
         sd = fwhm / (2 * np.sqrt(2 * np.log(2)))
         # number of rows
         dim = incident_spectrum.energies.shape[0]
-        res_mat = np.zeros((dim, dim))
+        res_mat = np.empty((dim, dim))
         rng = np.arange(dim)
         for i in rng:
+            # make each matrix row a Gaussian centered at the diagonal
             res_mat[i] = gaussian_row(dim, sd, i)
         return res_mat
 
