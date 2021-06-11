@@ -19,14 +19,14 @@ class BattagliaParameters:
         pt_p2 = np.log(3.5) / np.log(10) - 12
         self.plasma_temp = (1 / 0.33) * (pt_p1 - pt_p2)                         # MK
 
-        self.emission_measure = (goes_flux / 3.6 * 1e50) ** (1/0.92)       # particles^2 / cm3
+        self.emission_measure = (goes_flux / 3.6 * 1e50) ** (1/0.92)            # particles^2 / cm3
         self.reference_energy = 35.0                                            # keV
-        self.reference_flux = (goes_flux / (1.8e-5)) ** (1/0.83)           # photon / (s cm2 keV)
+        self.reference_flux = (goes_flux / (1.8e-5)) ** (1/0.83)                # photon / (s cm2 keV)
 
         if goes_flux < goes_class_lookup('C2'):
-            self.spectral_index = 2.04 * self.reference_flux**(-0.16)               # unitless
+            self.spectral_index = 2.04 * self.reference_flux**(-0.16)           # unitless
         else:
-            self.spectral_index = 3.60 * self.reference_flux**(-0.16)               # unitless
+            self.spectral_index = 3.60 * self.reference_flux**(-0.16)           # unitless
 
     def gen_vth_params(self) -> (float, float):
         K_B = 8.627e-8  # keV/K
@@ -55,7 +55,10 @@ class FlareSpectrum:
 
         return cls(energies, thermal_spec, nonthermal_spec)
 
-    def __init__(self, energies: np.ndarray, thermal: np.ndarray, nonthermal: np.ndarray):
+    def __init__(self, goes_flux:np.float64, energies: np.ndarray,
+                 thermal: np.ndarray, nonthermal: np.ndarray):
+        ''' why do we save the GOES flux? because we can use it in a hashmap to retrieve previously computed data. '''
+        self.goes_flux = goes_flux
         self.energies = energies
         self.thermal = thermal
         self.nonthermal = nonthermal

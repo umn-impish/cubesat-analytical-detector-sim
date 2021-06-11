@@ -27,6 +27,7 @@ def build_impress(aluminum_thicknesses):
     return Instrument(detector_stacks)
 
 def impress_flare_spectrum(goes_flux, e_start, e_end, de):
+    # save a hashmap of flares so that it doesn't recompute every time (slow)
     try:
         return impress_flare_spectrum.hash[goes_flux]
     except (KeyError, AttributeError) as e:
@@ -37,6 +38,7 @@ def impress_flare_spectrum(goes_flux, e_start, e_end, de):
             impress_flare_spectrum.hash = { goes_flux : spec }
         return spec
 
+# TODO: add a goes_flux variable to FlareSpectrum to use for hashing elsewhere
 def test():
     goes_class = 'M1'
     goes_flux = goes_class_lookup(goes_class)       # W / cm2
@@ -48,12 +50,17 @@ def test():
     impress = build_impress(al_thicks)
     flare_spectrum = impress_flare_spectrum(goes_flux, e_start, e_end, de)
     count_vectors = []
+    eff_area_vecs = []
     for det in impress.detector_stacks:
         response = det.generate_detector_response_to(flare_spectrum)
         count_vectors.append(np.matmul(response, flare_spectrum.flare))
+        base_area = np.ones(flare_spectrum.energies.size) * det.area
+        eff_area_vecs.append(np.matmul(response, base_area))
 
-    out = [flare_spectrum.energies] + [e for e in count_vectors] + [flare_spectrum.flare]
-    np.savetxt('flare_out.tab', np.transpose(out))
+    outf = 'area_out.tab'
+    # out = [flare_spectrum.energies] + [e for e in count_vectors] + [flare_spectrum.flare]
+    out = [flare_spectrum.energies] + [a for a in eff_area_vecs]
+    np.savetxt(outf, np.transpose(out))
 #     total = np.trapz(count_vectors, x=flare_spectrum.energies, dx=de, axis=1) * impress.detector_stacks[0].area
 #     print(f"Total counts: {total}")
 

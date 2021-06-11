@@ -46,4 +46,5 @@ DENSITIES = {
     CEBR3 : RHO_CEBR3
 }
 
-DIAMETER = np.sqrt((43 / 4) / np.pi / 2)   # cm
+FULL_AREA = 43                                  # cm2 
+DIAMETER = 2 * np.sqrt(FULL_AREA / 4 / np.pi)   # cm

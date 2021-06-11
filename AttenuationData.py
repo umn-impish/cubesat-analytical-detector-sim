@@ -30,12 +30,12 @@ class AttenuationData:
         self.attenuations[AttenuationType.RAYLEIGH] = rayleigh
         self.attenuations[AttenuationType.COMPTON] = compton
 
-
     def interpolate_from(self, incident_flare: FlareSpectrum): # returns AttenuationData object
         '''interpolate standard data to fit given incident_flare energy spectrum'''
         # no data except energies
         new_att = AttenuationData(incident_flare.energies, [], [], [])
         for key, att in self.attenuations.items():
+            # interpolate between NIST energies
             interp_atts = np.interp(incident_flare.energies, self.energies, att)
             new_att.attenuations[key] = interp_atts
         return new_att

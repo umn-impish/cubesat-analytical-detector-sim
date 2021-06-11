@@ -13,9 +13,7 @@ class DetectorStack:
 
     def generate_detector_response_to(self, incident_spectrum: FlareSpectrum) -> np.ndarray:
         response = self.generate_attenuation_response_due_to(incident_spectrum)
-        pd_spread = self.photon_detector.generate_energy_resolution_given(incident_spectrum)
-        response = np.matmul(pd_spread, response)
-        return response
+        return apply_detector_dispersion_for(incident_spectrum, response)
 
     def generate_attenuation_response_due_to(self, incident_spectrum) -> np.ndarray:
         response = np.identity(incident_spectrum.energies.shape[0])
@@ -23,8 +21,14 @@ class DetectorStack:
             response = np.matmul(material.generate_overall_response_matrix_given(incident_spectrum), response)
         return response
 
+    def apply_detector_dispersion_for(self, incident_spectrum: FlareSpectrum, resp_matrix: np.ndarray) -> np.ndarray:
+        pd_spread = self.photon_detector.generate_energy_resolution_given(incident_spectrum)
+        return np.matmul(pd_spread, resp_matrix)
+
     def generate_effective_area_due_to(self, incident_spectrum) -> np.ndarray:
-        self.generate_detector_response_to(incident_spectrum) * self.materials[0].area
+        # area vector
+        av = np.ones(incident_spectrum.energies.size) * self.area
+        return np.matmul(self.generate_detector_response_to(incident_spectrum), av)
 
     def respond_to(self, incident_spectrum) -> np.ndarray:
         self.generate_detector_response_to(incident_spectrum) * incident_spectrum.energies
@@ -38,7 +42,7 @@ class HafxStack(DetectorStack):
     ''' photoabsorption into the scintillator crystal is different here so we need separate behavior. '''
     def __init__(self, materials: list, photon_detector: PhotonDetector):
         super().__init__(materials, photon_detector)
-        # take off the scintillator to treat it separately.
+        # take off the scintillator to treat it separately
         self.scintillator = self.materials.pop()
 
     def generate_detector_response_to(self, incident_spectrum: FlareSpectrum) -> np.ndarray:
@@ -46,10 +50,5 @@ class HafxStack(DetectorStack):
         # now incorporate the scintillator
         ident = np.identity(incident_spectrum.energies.shape[0])
         absorbed = ident - self.scintillator.generate_overall_response_matrix_given(incident_spectrum)
-#        for x in absorbed:
-#            print(absorbed)
-#        input()
         response = np.matmul(absorbed, response)
-        pd_spread = self.photon_detector.generate_energy_resolution_given(incident_spectrum)
-        response = np.matmul(pd_spread, response)
-        return response
+        return self.apply_detector_dispersion_for(incident_spectrum, response)

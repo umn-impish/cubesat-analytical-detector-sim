@@ -20,6 +20,7 @@ class Sipm3000(PhotonDetector):
             res_mat[i] = gaussian_row(dim, sd, i)
         return res_mat
 
+
 def gaussian_row(dim, sd, idx):
     space = np.arange(0, dim, dtype=np.float64)
     prefac = 1 / (sd * np.sqrt(2 * np.pi))

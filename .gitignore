@@ -4,4 +4,4 @@
 *.pdf
 __pycache__
 *.pyc
-flare_out.tab
+./*tab
