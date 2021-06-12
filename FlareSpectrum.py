@@ -1,14 +1,15 @@
 import numpy as np
 from sswidl_bridge import power_law_with_pivot, f_vth_bridge
 
+GOES_PREFIX = {
+    'C' : 1e-6,
+    'M' : 1e-5,
+    'X' : 1e-4
+}
+
 def goes_class_lookup(flare_specifier: str) -> np.float64:
-    lookup = {
-        'C' : 1e-6,
-        'M' : 1e-5,
-        'X' : 1e-4
-    }
     ch, mul = flare_specifier[0].upper(), float(flare_specifier[1:])
-    return lookup[ch] * mul
+    return GOES_PREFIX[ch] * mul
 
 
 class BattagliaParameters:
@@ -45,24 +46,23 @@ class FlareSpectrum:
     def make_with_battaglia_scaling(cls, goes_flux: np.float64, start_energy: np.float64,
             end_energy: np.float64, de: np.float64, rel_abun: np.float64 = 1.0):
         ''' goes flux in W/m2, energies in keV '''
-        energies = np.arange(start_energy, end_energy + de, de)     # keV
         bp = BattagliaParameters(goes_flux)
-
-        good_pt, good_em = bp.gen_vth_params()                      # (keV, 1e49particle2 / cm3)
+        energies = np.arange(start_energy, end_energy + de, de)                         # keV
+        good_pt, good_em = bp.gen_vth_params()                                          # (keV, 1e49particle2 / cm3)
         thermal_spec = f_vth_bridge(
-                energies, good_em, good_pt, rel_abun)               # photon / (s cm2 keV)
-        nonthermal_spec = power_law_with_pivot(energies, bp.reference_flux, bp.spectral_index, bp.reference_energy)
+                energies, good_em, good_pt, rel_abun)                                   # photon / (s cm2 keV)
+        nonthermal_spec = power_law_with_pivot(
+                energies, bp.reference_flux, bp.spectral_index, bp.reference_energy)    # photon / (s cm2 keV)
 
-        return cls(energies, thermal_spec, nonthermal_spec)
+        return cls(goes_flux, energies, thermal_spec, nonthermal_spec)
 
-    def __init__(self, goes_flux:np.float64, energies: np.ndarray,
+    def __init__(self, goes_flux: np.float64, energies: np.ndarray,
                  thermal: np.ndarray, nonthermal: np.ndarray):
         ''' why do we save the GOES flux? because we can use it in a hashmap to retrieve previously computed data. '''
         self.goes_flux = goes_flux
         self.energies = energies
-        self.thermal = thermal
-        self.nonthermal = nonthermal
+        self.flare = thermal + nonthermal
 
-    @property
-    def flare(self) -> np.ndarray:
-        return self.thermal + self.nonthermal
+#     @property
+#     def flare(self) -> np.ndarray:
+#         return self.thermal + self.nonthermal
