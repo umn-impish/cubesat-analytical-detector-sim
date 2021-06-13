@@ -21,7 +21,6 @@ class Material:
         # i.e. multiplication order doesn't matter
         for k in self.attenuation_data.attenuations.keys():
             mat = np.matmul(self.generate_modifying_matrix_for(k, incident_spectrum), mat)
-
         return mat
 
     def generate_modifying_matrix_for(self, mechanism_type, incident_spectrum: FlareSpectrum) -> np.ndarray:
@@ -37,10 +36,6 @@ class Material:
         relevant_attenuation = interpolated_attenuations.attenuations[which]
         exponent = -1 * relevant_attenuation * self.mass_density * self.thickness
         actual_attenuation = np.exp(exponent)
-#        if self.mass_density == 5.1:
-#            for i in range(actual_attenuation.size):
-#                print(f"energy {incident_spectrum.energies[i]}\t att {actual_attenuation[i]}")
-#            input()
         return np.diag(actual_attenuation)
 
     def _gen_photo(self, incident_spectrum: FlareSpectrum) -> np.ndarray:

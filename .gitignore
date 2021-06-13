@@ -4,7 +4,7 @@
 *.pdf
 __pycache__
 *.pyc
-./*tab
-engs-*.txt
+*_out.tab
+*.txt
 *.png
 *.npz
