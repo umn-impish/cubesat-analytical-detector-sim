@@ -13,14 +13,13 @@ class Sipm3000(PhotonDetector):
         step_size = incident_spectrum.energies[1] - incident_spectrum.energies[0]
         fwhm = self.DELTA_E * incident_spectrum.energies / step_size
         sd = fwhm / (2 * np.sqrt(2 * np.log(2)))
-        # number of rows
-        dim = incident_spectrum.energies.shape[0]
-        res_mat = np.empty((dim, dim))
+
+        dim = incident_spectrum.energies.size
         rng = np.arange(dim)
-        for i in rng:
-            # make each matrix row a Gaussian centered at the diagonal
-            res_mat[i] = gaussian_row(dim, sd, i)
-        return res_mat
+        # vectorized NumPy operations are multi-threaded and run in C;
+        # generally much faster than Python loops
+        vectorized_indices = np.tile(rng, (dim, 1)).transpose()
+        return gaussian_row(dim, sd, vectorized_indices)
 
 
 def gaussian_row(dim, sd, idx):
