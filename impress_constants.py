@@ -48,3 +48,5 @@ DENSITIES = {
 
 FULL_AREA = 43                                  # cm2 
 DIAMETER = 2 * np.sqrt(FULL_AREA / 4 / np.pi)   # cm
+
+RESPONSE_MAT_DIR = 'resp-mat'
