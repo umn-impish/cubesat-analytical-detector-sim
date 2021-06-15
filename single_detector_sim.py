@@ -95,7 +95,7 @@ def find_appropriate_counts(detector_stack, flare_spectrum, dead_time, start_thi
     TOL = 0.05
     divs = 0
     # make step size smaller max. TARGET_DIVS times
-    while divs < TARGET_DIVS:
+    while divs < TARGET_DIVS and cur_thick > 0:
         print(f"{flare_spectrum.goes_class}: {cur_thick:.3e} cm")
         unsmeared, eff_area, smeared, save_fname = relevant_to_sims(detector_stack, en.size, flare_spectrum, cur_thick)
         counts_per_kev = np.matmul(smeared, fl) * eff_area
@@ -113,15 +113,14 @@ def find_appropriate_counts(detector_stack, flare_spectrum, dead_time, start_thi
 
     if divs == TARGET_DIVS:
         print("** Hit max number of step divisions.")
+    if cur_thick < 0:
+        print("** zero attenuator window thickness! uh oh")
     # go back one
     cur_thick -= step
     saveit(flare_spectrum, unsmeared, eff_area, smeared, save_fname, cur_thick)
 
 
 def main():
-    # if not os.path.exists(ic.LOGS_DIR):
-    #     os.mkdir(ic.LOGS_DIR)
-    # log = logging.getLogger()
     e_start = 1.0   # keV
     e_end = 299.0   # keV
     de = 0.1        # keV
@@ -133,7 +132,7 @@ def main():
         print(f"Starting {f}")
         flare_spectrum = FlareSpectrum.make_with_battaglia_scaling(f, e_start, e_end, de)
         dead_time = 1e-6    # s
-        start_thick = 0.1   # cm (way too thick!)
+        start_thick = 1.0   # cm (way too thick!)
         find_appropriate_counts(ds, flare_spectrum, dead_time, start_thick)
         # diagnostic(ds, flare_spectrum, f, len(goes_classes) - i)
 
