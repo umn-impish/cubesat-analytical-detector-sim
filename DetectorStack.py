@@ -11,7 +11,7 @@ class DetectorStack:
         self.materials = materials
         self.photon_detector = photon_detector
 
-    def generate_detector_response_to(self, incident_spectrum: FlareSpectrum, disperse_energy: bool=True) -> np.ndarray:
+    def generate_detector_response_to(self, incident_spectrum: FlareSpectrum, disperse_energy: bool) -> np.ndarray:
         response = self.generate_attenuation_response_due_to(incident_spectrum)
         return self._dispatch_dispersion(incident_spectrum, response, disperse_energy)
 

@@ -43,10 +43,10 @@ class BattagliaParameters:
 class FlareSpectrum:
     # NB: this might not be the best way to organize this, it's just how i first thought to do it
     @classmethod
-    def make_with_battaglia_scaling(cls, goes_flux: np.float64, start_energy: np.float64,
+    def make_with_battaglia_scaling(cls, goes_class: str, start_energy: np.float64,
             end_energy: np.float64, de: np.float64, rel_abun: np.float64 = 1.0):
         ''' goes flux in W/m2, energies in keV '''
-        bp = BattagliaParameters(goes_flux)
+        bp = BattagliaParameters(goes_class_lookup(goes_class))
         energies = np.arange(start_energy, end_energy + de, de)                         # keV
         good_pt, good_em = bp.gen_vth_params()                                          # (keV, 1e49particle2 / cm3)
         thermal_spec = f_vth_bridge(
@@ -54,15 +54,17 @@ class FlareSpectrum:
         nonthermal_spec = power_law_with_pivot(
                 energies, bp.reference_flux, bp.spectral_index, bp.reference_energy)    # photon / (s cm2 keV)
 
-        return cls(goes_flux, energies, thermal_spec, nonthermal_spec)
+        return cls(goes_class, energies, thermal_spec, nonthermal_spec)
 
-    def __init__(self, goes_flux: np.float64, energies: np.ndarray,
+    def __init__(self, goes_class: str, energies: np.ndarray,
                  thermal: np.ndarray, nonthermal: np.ndarray):
-        ''' why do we save the GOES flux? because we can use it in a hashmap to retrieve previously computed data. '''
-        self.goes_flux = goes_flux
+        self.goes_class = goes_class
         self.energies = energies
         self.flare = thermal + nonthermal
 
+    @property
+    def goes_flux(self) -> np.float64:
+        return goes_class_lookup(self.goes_clas)
 #     @property
 #     def flare(self) -> np.ndarray:
 #         return self.thermal + self.nonthermal

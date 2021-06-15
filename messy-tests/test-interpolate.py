@@ -4,7 +4,7 @@ from AttenuationData import AttenuationData, AttenuationType
 from FlareSpectrum import FlareSpectrum
 
 energies = np.arange(1, 100, step=0.1)
-fs = FlareSpectrum(1e-5, energies, np.array([]), np.array([]))
+fs = FlareSpectrum('C1', energies, np.array([]), np.array([]))
 ad = AttenuationData.from_nist_file('attenuation-data-files/Al.tab')
 new = ad.interpolate_from(fs)
 
