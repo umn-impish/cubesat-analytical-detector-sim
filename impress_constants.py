@@ -53,6 +53,7 @@ ENG_KEY = 'energies'
 RESP_KEY = 'response_matrix'
 EFFA_KEY = 'eff_area'
 FS_KEY = 'flare_spectrum'
+THICK_KEY = 'thickness'
 
 # Directories
 DATA_DIR = 'responses-and-areas'

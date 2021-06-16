@@ -85,13 +85,36 @@ def total_counts(df_list, fig, ax, fsz):
             print(outs, file=outf)
 
 
+def plot_intensities_together(flares_dict, fig, ax):
+    ax.set_xlabel('Energy (keV)')
+    ax.set_ylabel('Detector count spectrum (photons/ (keV s))')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_title('Detector count spectrum for various flares')
+    for fsz, fname in flares_dict.items():
+        load_name = os.path.join(ic.DATA_DIR, fname)
+        dat = np.load(load_name)
+        energies = dat[ic.ENG_KEY]
+        fspec = dat[ic.FS_KEY]
+        resp = dat[ic.RESP_KEY]
+        lab = fname.split('_')[:2]
+        lab = "{} at Al = {} cm thick".format(*lab)
+        ax.plot(energies, np.matmul(resp, fspec) * ic.FULL_AREA / 4, label=lab)
+    ax.plot(energies, fspec * ic.FULL_AREA / 4, label="Incident spectrum")
+    ax.legend()
+    fig.set_size_inches(16, 9)
+    plt.savefig(os.path.join(ic.FIG_DIR, 'multiple-count-spectra.pdf'))
+
+
 def main():
     files = os.listdir(ic.DATA_DIR)
     files.sort(key=sort_by_goes)
-    f, a = plt.subplots()
-    # diagnose_areas(files, f, a)
     flares = ('C1', 'C5', 'M1', 'M5', 'X1')
-    for size in flares:
-        total_counts(files, f, a, size)
+    fd = { fl : next(file for file in files if fl in file) for fl in flares }
+    f, a = plt.subplots()
+    plot_intensities_together(fd, f, a)
+    # diagnose_areas(files, f, a)
+#    for size in flares:
+#        total_counts(files, f, a, size)
 
 if __name__ == '__main__': main()

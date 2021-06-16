@@ -8,5 +8,6 @@ __pycache__
 *.txt
 *.png
 *.npz
+*.log
 responses-and-areas
 figures
