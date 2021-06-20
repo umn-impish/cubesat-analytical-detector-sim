@@ -1,6 +1,6 @@
 import numpy as np
-from AttenuationData import AttenuationData, AttenuationType
-from FlareSpectrum import FlareSpectrum
+from .AttenuationData import AttenuationData, AttenuationType
+from .FlareSpectrum import FlareSpectrum
 
 class Material:
     def __init__(self, diameter: np.float64, attenuation_thickness: np.float64,
@@ -14,12 +14,12 @@ class Material:
     def area(self):
         return (self.diameter / 2)**2 * np.pi
 
-    def generate_overall_response_matrix_given(self, incident_spectrum: FlareSpectrum) -> np.ndarray:
+    def generate_overall_response_matrix_given(self, incident_spectrum: FlareSpectrum, attenuations: list) -> np.ndarray:
         dim = incident_spectrum.energies.shape[0]
         mat = np.identity(dim, dtype=np.float64)
         # everything is diagonal except Compton scattering, so the matrices commute
         # i.e. multiplication order doesn't matter
-        for k in self.attenuation_data.attenuations.keys():
+        for k in attenuations:
             mat = np.matmul(self.generate_modifying_matrix_for(k, incident_spectrum), mat)
         return mat
 

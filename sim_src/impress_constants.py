@@ -6,9 +6,12 @@ a whole bunch of constants
 '''
 
 AL = 'Al'
-TE = 'Teflon'
+TEF = 'Teflon'
 BE = 'Be'
 CEBR3 = 'CeBr3'
+# order on HaFX detector
+HAFX_MATERIAL_ORDER = [AL, TEF, BE, CEBR3]
+HAFX_DEAD_TIME = 1e-6       # s
 
 '''
 NB: these all need to get re-verified. i just took them from Ethan's code.
@@ -18,21 +21,30 @@ TEFLON_THICKNESS = 0.0127   # cm
 CEBR3_THICKNESS = 0.5       # cm
 THICKNESSES = {
     BE : BE_THICKNESS,
-    TE : TEFLON_THICKNESS,
+    TEF : TEFLON_THICKNESS,
     CEBR3 : CEBR3_THICKNESS
     # aluminum is special
 }
 
-ATTEN_FOLDER = 'attenuation-data-files'
-ATTEN_BASENAMES = [AL, TE, BE, CEBR3]
+# Directories
+AREA_DIR = 'areas'
+ATTEN_DIR = 'attenuation-data-files'
+DATA_DIR = 'responses-and-areas'
+FIG_DIR = 'figures'
+LOGS_DIR = 'logs'
+SRC_DIR = 'sim_src'
+
+ATTEN_BASENAMES = [AL, TEF, BE, CEBR3]
 ATTEN_FILE_FORMAT = "{}.tab"
 
 # attenuation data from:
 #   looked here for reference: https://www.nist.gov/pml/x-ray-mass-attenuation-coefficients
 #   took data from here: https://physics.nist.gov/PhysRefData/Xcom/html/xcom1.html
+#   nb attenuation data must be in same folder as this file. probably should rework this at some point.
 ATTEN_FILES = {
         abn : os.path.join(
-        ATTEN_FOLDER,
+        os.path.dirname(__file__),
+        ATTEN_DIR,
         ATTEN_FILE_FORMAT.format(abn)) for abn in ATTEN_BASENAMES }
 
 RHO_AL = 2.699      # g / cm3
@@ -42,21 +54,24 @@ RHO_CEBR3 = 5.1     # g / cm3
 DENSITIES = {
     AL : RHO_AL,
     BE : RHO_BE,
-    TE : RHO_TEF,
+    TEF : RHO_TEF,
     CEBR3 : RHO_CEBR3
 }
 
 FULL_AREA = 43                                  # cm2 
+SINGLE_DET_AREA = FULL_AREA / 4                 # cm2
 DIAMETER = 2 * np.sqrt(FULL_AREA / 4 / np.pi)   # cm
 
 ENG_KEY = 'energies'
 RESP_KEY = 'response_matrix'
+UNATT_KEY = 'unattenuated_response_matrix'
 EFFA_KEY = 'eff_area'
 FS_KEY = 'flare_spectrum'
 THICK_KEY = 'thickness'
 
-# Directories
-DATA_DIR = 'responses-and-areas'
-FIG_DIR = 'figures'
-AREA_DIR = 'areas'
-LOGS_DIR = 'logs'
+# energies
+E_MIN = 1.0         # keV
+E_MAX = 300.0       # keV
+DE = 0.1            # keV
+E_TH_MIN = 8.0      # keV
+E_TH_MAX = 100.0    # keV

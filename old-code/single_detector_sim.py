@@ -14,7 +14,7 @@ from PhotonDetector import Sipm3000
 def gen_base_stack():
     ''' make the materials in every detector stack '''
     # XXX: BUG WAS HERE
-    material_order = [ic.AL, ic.TE, ic.BE, ic.CEBR3]
+    material_order = [ic.AL, ic.TEF, ic.BE, ic.CEBR3]
     materials = []
     for mat_name in material_order:
         if mat_name == ic.AL:
@@ -90,7 +90,7 @@ def count_edge(cts, target, dt):
 def find_appropriate_counts(detector_stack, flare_spectrum, dead_time, start_thick):
     '''
     start with thickness that's sure to attenuate the flare
-    zigzag around target count rate until we're close enough for gov't work (i.e. within 1e-9 cm Al thicknessof it)
+    zigzag around target count rate until we're close enough for gov't work
     '''
     E_MIN, E_MAX = 8, 100                         # keV
     fl, en = flare_spectrum.flare, flare_spectrum.energies

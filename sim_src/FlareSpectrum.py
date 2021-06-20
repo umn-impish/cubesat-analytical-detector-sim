@@ -1,5 +1,5 @@
 import numpy as np
-from sswidl_bridge import power_law_with_pivot, f_vth_bridge
+from .sswidl_bridge import power_law_with_pivot, f_vth_bridge
 
 GOES_PREFIX = {
     'C' : 1e-6,
@@ -47,14 +47,18 @@ class FlareSpectrum:
             end_energy: np.float64, de: np.float64, rel_abun: np.float64 = 1.0):
         ''' goes flux in W/m2, energies in keV '''
         bp = BattagliaParameters(goes_class_lookup(goes_class))
-        energies = np.arange(start_energy, end_energy + de, de)                         # keV
+        energies = np.arange(start_energy, end_energy, de)                              # keV
         good_pt, good_em = bp.gen_vth_params()                                          # (keV, 1e49particle2 / cm3)
         thermal_spec = f_vth_bridge(
-                energies, good_em, good_pt, rel_abun)                                   # photon / (s cm2 keV)
+                start_energy, end_energy, de, good_em, good_pt, rel_abun)               # photon / (s cm2 keV)
         nonthermal_spec = power_law_with_pivot(
                 energies, bp.reference_flux, bp.spectral_index, bp.reference_energy)    # photon / (s cm2 keV)
 
         return cls(goes_class, energies, thermal_spec, nonthermal_spec)
+
+    @classmethod
+    def dummy(cls, energies: np.ndarray):
+       return cls('', energies, np.zeros(energies.size), np.zeros(energies.size))
 
     def __init__(self, goes_class: str, energies: np.ndarray,
                  thermal: np.ndarray, nonthermal: np.ndarray):
@@ -64,7 +68,7 @@ class FlareSpectrum:
 
     @property
     def goes_flux(self) -> np.float64:
-        return goes_class_lookup(self.goes_clas)
+        return goes_class_lookup(self.goes_class)
 #     @property
 #     def flare(self) -> np.ndarray:
 #         return self.thermal + self.nonthermal

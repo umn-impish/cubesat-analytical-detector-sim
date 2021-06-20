@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import interpolate
-from FlareSpectrum import FlareSpectrum
+from .FlareSpectrum import FlareSpectrum
 
 class AttenuationType:
     PHOTOELECTRIC_ABSORPTION = 1
@@ -40,7 +40,7 @@ class AttenuationData:
             # we want straight-line interpolation on the log plot,
             # so take the log before doing any fitting
             loge, logat = np.log(self.energies), np.log(att)
-            interp_func = interpolate.interp1d(loge, logat)
+            interp_func = interpolate.interp1d(loge, logat, fill_value="extrapolate")
             new_logat = interp_func(np.log(incident_flare.energies))
             new_at = np.exp(new_logat)
             new_att.attenuations[key] = new_at

@@ -19,7 +19,7 @@ def power_law_with_pivot(eng_ary, reference_flux, spectral_index, e_pivot):
     return reference_flux * ((e_pivot / eng_ary) ** (spectral_index))
 
 
-def f_vth_bridge(energy_array, emission_measure, plasma_temperature, relative_abundance):
+def f_vth_bridge(eng_start, eng_end, de, emission_measure, plasma_temperature, relative_abundance):
     '''
     NB: energies are in keV
         *** emission measure is in (1e49 cm-3) ***
@@ -27,11 +27,6 @@ def f_vth_bridge(energy_array, emission_measure, plasma_temperature, relative_ab
 
     the wonky units are to match what IDL has. :(
     '''
-    eng_start = np.min(energy_array)
-    eng_end = np.max(energy_array)
-    de = (energy_array[1] - energy_array[0])
-    # make step size a nice round number
-    de = de - (de % 0.01)
     args = [eng_start, eng_end, de, emission_measure, plasma_temperature, relative_abundance]
     dirty = run_sswidl_script("f_vth_bridge", *args)
     return clean_table_output(dirty)
@@ -43,9 +38,10 @@ def run_sswidl_script(script_name, *args, debug=False):
     Then we can just split off the part of SSWIDL's ramblings that we care about, our function output.
     Then we just return it and let the user decide what to do with the rest of it.
     '''
+    script_path = os.path.join(os.path.dirname(__file__), script_name)
     str_args = [str(a) for a in args]
     idl_cmds_ary = [
-        '.compile {sn}'.format(sn=script_name),
+        '.compile {sp}'.format(sp=script_path),
         'print, "{cd}"'.format(cd=CMD_DONE_IDENTIFIER),
         '{sn}({argz})'.format(
             sn=script_name,
@@ -66,11 +62,18 @@ def run_sswidl_script(script_name, *args, debug=False):
 
     # slice out the output
     # list slices are [inclusive:exclusive)
+    estr = "Nothing returned from IDL. check that your script isn't broken/missing. it has to be in the same folder as the bridge file"
     try:
         data_start_idx = out.index(CMD_DONE_IDENTIFIER) + 1
         data_end_idx = out.index(CMD_DONE_IDENTIFIER, data_start_idx)
-        return out[data_start_idx:data_end_idx]
-    except ValueError:
+        out = out[data_start_idx:data_end_idx]
+        if len(out) == 0:
+            raise ValueError(estr)
+        return out
+    except ValueError as e:
+        # if we made the value error just re-raise it
+        if estr == e.args[0]:
+            raise
         loud_print("The IDL script likely didn't run. Make sure you're launching from tcsh (shudders)", file=sys.stderr)
         input("Press any key to continue")
         raise
