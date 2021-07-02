@@ -17,10 +17,10 @@ def gen_sim_quants(ds, fs, thick):
     ds.materials[0].thickness = thick
     ret = dict()
     ret[ic.ENG_KEY] = fs.energies
-    ret[ic.UNATT_KEY] = ds.generate_detector_response_to(fs, False)
+    ret[ic.UNDISP_KEY] = ds.generate_detector_response_to(fs, False)
     avec = np.ones(fs.energies.size) * ic.SINGLE_DET_AREA
-    ret[ic.EFFA_KEY] = np.matmul(ret[ic.UNATT_KEY], avec)
-    ret[ic.RESP_KEY] = ds.apply_detector_dispersion_for(fs, ret[ic.UNATT_KEY])
+    ret[ic.EFFA_KEY] = np.matmul(ret[ic.UNDISP_KEY], avec)
+    ret[ic.RESP_KEY] = ds.apply_detector_dispersion_for(fs, ret[ic.UNDISP_KEY])
     return ret
 
 

@@ -64,7 +64,7 @@ DIAMETER = 2 * np.sqrt(FULL_AREA / 4 / np.pi)   # cm
 
 ENG_KEY = 'energies'
 RESP_KEY = 'response_matrix'
-UNATT_KEY = 'unattenuated_response_matrix'
+UNDISP_KEY = 'undispersed_response_matrix'
 EFFA_KEY = 'eff_area'
 FS_KEY = 'flare_spectrum'
 THICK_KEY = 'thickness'

@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import scipy.integrate
-
 import sim_src.impress_constants as ic
 
 def pileup_fraction_estimate(count_rate, pileup_time):
@@ -28,9 +27,12 @@ for k in keyz:
     dat = loaded[k]
     fs = dat[ic.FS_KEY]
     eng = dat[ic.ENG_KEY]
-    resp = dat[ic.RESP_KEY]
-    att = np.matmul(resp, fs)
-    count_rate = scipy.integrate.simpson(att, x=eng) * ic.SINGLE_DET_AREA
+    th = 1
+    # doesn't matter if we use the energy-dispersed matrix or not
+    # total counts are conserved
+    undisp = dat[ic.UNDISP_KEY]
+    att = np.matmul(undisp, fs)
+    count_rate = scipy.integrate.simpson(att[eng >= th], x=eng[eng >= th]) * ic.SINGLE_DET_AREA
     frac, err = pileup_fraction_estimate(count_rate, pileup_time)
     err_str = f"{(err * 100):.2e}%"
     print(f"{k:<30}{dat[ic.THICK_KEY]:<30.3e}{frac:<30.2%}+-{err_str:<30}")
