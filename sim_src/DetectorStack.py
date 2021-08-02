@@ -55,7 +55,7 @@ class HafxStack(DetectorStack):
         if self.enable_scintillator:
             # now incorporate the scintillator
             ident = np.identity(incident_spectrum.energies.size)
-            # we must include photoelectric absorption. it is how the scintillator works.
+            # we must include photoelectric absorption as this mechanism leads to scintillation.
             abs_atts = list(set([AttenuationType.PHOTOELECTRIC_ABSORPTION] + chosen_attenuations))
             absorbed = ident - self.scintillator.generate_overall_response_matrix_given(incident_spectrum, abs_atts)
             response = np.matmul(absorbed, response)

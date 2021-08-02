@@ -10,22 +10,7 @@ from sim_src.FlareSpectrum import FlareSpectrum
 from sim_src.Material import Material
 from sim_src.PhotonDetector import Sipm3000
 
-def generate_impress_stack(material_order, al_thick=NotImplemented):
-    ''' make the materials in every detector stack '''
-    materials = []
-    for mat_name in material_order:
-        if mat_name == ic.AL:
-            # to be modified
-            thick = al_thick
-        else:
-            thick = ic.THICKNESSES[mat_name]    # cm
-        rho = ic.DENSITIES[mat_name]            # g / cm3
-        atten_dat = AttenuationData.from_nist_file(ic.ATTEN_FILES[mat_name])
-        materials.append(Material(ic.DIAMETER, thick, rho, atten_dat))
-    return HafxStack(materials, Sipm3000())
-
-
-def setup_structure(ident: str) -> None:
+def OLD_setup_structure(ident: str) -> None:
     for p in (ic.DATA_DIR, ic.LOGS_DIR):
         if not os.path.exists(p): os.mkdir(p)
     dt = datetime.now()
@@ -38,11 +23,11 @@ def print_log(*args):
     logging.info(*args)
 
 
-def optimized_key(sz):
+def OLD_optimized_key(sz):
     return "optimized_" + sz
 
 
-def load_optimized_hafx(data_dir, goes_classes):
+def OLD_load_optimized_hafx(data_dir, goes_classes):
     files = os.listdir(data_dir)
     ideal = dict()
     for f in files:
@@ -55,7 +40,7 @@ def load_optimized_hafx(data_dir, goes_classes):
 
 
 # XXX: idea, Thresholds class that has energy limits and threshold counts
-def compute_optimized_quantities(ideal: dict, sim_goes_classes: tuple, thresh_counts: int) -> dict:
+def OLD_compute_optimized_quantities(ideal: dict, sim_goes_classes: tuple, thresh_counts: int) -> dict:
     loaded = dict()
     korig, katt, keffa = 'orig', 'att', 'effa'
     loaded[katt] = { sz : {} for sz in sim_goes_classes }

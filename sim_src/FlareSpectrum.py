@@ -1,15 +1,22 @@
 import numpy as np
 from .sswidl_bridge import power_law_with_pivot, f_vth_bridge
+from . import impress_constants as ic
 
 GOES_PREFIX = {
-    'C' : 1e-6,
-    'M' : 1e-5,
-    'X' : 1e-4
+    'C': 1e-6,
+    'M': 1e-5,
+    'X': 1e-4
 }
+
 
 def goes_class_lookup(flare_specifier: str) -> np.float64:
     ch, mul = flare_specifier[0].upper(), float(flare_specifier[1:])
     return GOES_PREFIX[ch] * mul
+
+
+def battaglia_iter(goes_classes: str):
+    for gc in goes_classes:
+        yield FlareSpectrum.make_with_battaglia_scaling(gc, ic.MIN_ENG, ic.MAX_ENG, ic.DE)
 
 
 class BattagliaParameters:
@@ -44,7 +51,7 @@ class FlareSpectrum:
     # NB: this might not be the best way to organize this, it's just how i first thought to do it
     @classmethod
     def make_with_battaglia_scaling(cls, goes_class: str, start_energy: np.float64,
-            end_energy: np.float64, de: np.float64, rel_abun: np.float64 = 1.0):
+                                    end_energy: np.float64, de: np.float64, rel_abun: np.float64 = 1.0):
         ''' goes flux in W/m2, energies in keV '''
         bp = BattagliaParameters(goes_class_lookup(goes_class))
         energies = np.arange(start_energy, end_energy, de)                              # keV
@@ -58,17 +65,19 @@ class FlareSpectrum:
 
     @classmethod
     def dummy(cls, energies: np.ndarray):
-       return cls('', energies, np.zeros(energies.size), np.zeros(energies.size))
+        ''' empty spectrum with only energies '''
+        return cls('', energies, np.zeros(energies.size), np.zeros(energies.size))
 
     def __init__(self, goes_class: str, energies: np.ndarray,
                  thermal: np.ndarray, nonthermal: np.ndarray):
         self.goes_class = goes_class
         self.energies = energies
-        self.flare = thermal + nonthermal
+        self.thermal, self.nonthermal = thermal, nonthermal
 
     @property
     def goes_flux(self) -> np.float64:
         return goes_class_lookup(self.goes_class)
-#     @property
-#     def flare(self) -> np.ndarray:
-#         return self.thermal + self.nonthermal
+
+    @property
+    def flare(self) -> np.ndarray:
+        return self.thermal + self.nonthermal

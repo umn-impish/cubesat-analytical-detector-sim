@@ -45,7 +45,8 @@ ATTEN_FILES = {
         abn : os.path.join(
         os.path.dirname(__file__),
         ATTEN_DIR,
-        ATTEN_FILE_FORMAT.format(abn)) for abn in ATTEN_BASENAMES }
+        ATTEN_FILE_FORMAT.format(abn)) for abn in ATTEN_BASENAMES
+}
 
 RHO_AL = 2.699      # g / cm3
 RHO_BE = 1.848      # g / cm3
@@ -62,16 +63,10 @@ FULL_AREA = 43                                  # cm2
 SINGLE_DET_AREA = FULL_AREA / 4                 # cm2
 DIAMETER = 2 * np.sqrt(FULL_AREA / 4 / np.pi)   # cm
 
-ENG_KEY = 'energies'
-RESP_KEY = 'response_matrix'
-UNDISP_KEY = 'undispersed_response_matrix'
-EFFA_KEY = 'eff_area'
-FS_KEY = 'flare_spectrum'
-THICK_KEY = 'thickness'
-
 # energies
-E_MIN = 1.0         # keV
-E_MAX = 300.0       # keV
-DE = 0.1            # keV
-E_TH_MIN = 8.0      # keV
-E_TH_MAX = 100.0    # keV
+MIN_ENG = 1.0               # keV
+MAX_ENG = 300.0             # keV
+DE = 0.1                    # keV
+MIN_THRESHOLD_ENG = 8.0     # keV
+MAX_THRESHOLD_ENG = 100.0   # keV
+
