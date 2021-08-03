@@ -10,6 +10,7 @@ from sim_src.FlareSpectrum import FlareSpectrum
 from sim_src.Material import Material
 from sim_src.PhotonDetector import Sipm3000
 
+
 def OLD_setup_structure(ident: str) -> None:
     for p in (ic.DATA_DIR, ic.LOGS_DIR):
         if not os.path.exists(p): os.mkdir(p)
@@ -21,10 +22,6 @@ def OLD_setup_structure(ident: str) -> None:
 def print_log(*args):
     print(*args)
     logging.info(*args)
-
-
-def OLD_optimized_key(sz):
-    return "optimized_" + sz
 
 
 def OLD_load_optimized_hafx(data_dir, goes_classes):

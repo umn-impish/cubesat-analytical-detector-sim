@@ -22,6 +22,9 @@ def gen_hafx_stack(al_thick: np.float64):
 
 
 class HafxSimulationContainer:
+    MIN_THRESHOLD_ENG = ic.MIN_THRESHOLD_ENG
+    MAX_THRESHOLD_ENG = ic.MAX_THRESHOLD_ENG
+
     KAL_THICKNESS = 'al_thickness'
     KFLARE_THERMAL = 'thermal'
     KFLARE_NONTHERMAL = 'nonthermal'
@@ -31,10 +34,9 @@ class HafxSimulationContainer:
     KEFFECTIVE_AREA = 'effective_area'
     KGOES_CLASS = 'goes_class'
     MATRIX_KEYS = (
-        KDISPERSED_RESPONSE, KPURE_RESPONSE,
-        KEFFECTIVE_AREA
+        KDISPERSED_RESPONSE, KPURE_RESPONSE
     )
-    SAVE_DIRECTORY = 'responses-and-areas'
+    DEFAULT_SAVE_DIR = 'responses-and-areas'
 
     @classmethod
     def from_saved_file(cls, filename: str):
@@ -44,7 +46,6 @@ class HafxSimulationContainer:
         try:
             goes_class = data[cls.KGOES_CLASS]
         except KeyError as e:
-            # print(f"Couldn't find key '{cls.KGOES_CLASS}' in loaded-in simulation. getting it from filename...", file=sys.stderr)
             goes_class = filename.split('_')[-3]
         fs = FlareSpectrum(
                 goes_class,
@@ -73,11 +74,26 @@ class HafxSimulationContainer:
         self.__al_thick = new
         self.detector_stack.materials[0].thickness = new
 
-    def simulate(self, new_thick=None):
+    def compute_effective_area(self, cps_threshold: np.int64=0):
+        if cps_threshold > 0:
+            restrict = np.logical_and(
+                    self.flare_spectrum.energies >= self.MIN_THRESHOLD_ENG,
+                    self.flare_spectrum.energies <= self.MAX_THRESHOLD_ENG)
+            dispersed_flare = np.matmul(self.matrices[self.KDISPERSED_RESPONSE], self.flare_spectrum.flare)
+            relevant_cps = np.trapz(
+                dispersed_flare[restrict] * ic.SINGLE_DET_AREA, x=self.flare_spectrum.energies[restrict])
+
+            # "set" effective area to zero if we get more than the threshold counts
+            if relevant_cps > cps_threshold:
+                return np.zeros_like(self.flare_spectrum.energies)
+
+        area_vector = np.ones_like(self.flare_spectrum.energies) * ic.SINGLE_DET_AREA
+        att_area = np.matmul(self.matrices[self.KPURE_RESPONSE], area_vector)
+        return att_area
+
+    def simulate(self):
         if self.al_thick is None:
             raise ValueError("Aluminum thickness has not been set.")
-        if new_thick is not None:
-            self.al_thick = new_thick
         # get the un-dispersed (pure) response matrix
         self.matrices[self.KPURE_RESPONSE] =\
                 self \
@@ -88,21 +104,18 @@ class HafxSimulationContainer:
                 self \
                 .detector_stack \
                 .apply_detector_dispersion_for(self.flare_spectrum, self.matrices[self.KPURE_RESPONSE])
-        # compute effective area 
-        area_vector = np.ones_like(self.flare_spectrum.energies) * ic.SINGLE_DET_AREA
-        self.matrices[self.KEFFECTIVE_AREA] = np.matmul(self.matrices[self.KPURE_RESPONSE], area_vector)
 
     def gen_file_name(self, prefix):
         return f"{prefix}_{self.flare_spectrum.goes_class}_{self.al_thick:.3e}cm_hafx"
 
-    def save_to_file(self, prefix=None):
-        if not os.path.exists(self.SAVE_DIRECTORY):
-            os.mkdir(self.SAVE_DIRECTORY)
+    def save_to_file(self, out_dir=DEFAULT_SAVE_DIR, prefix=None):
+        if not os.path.exists(out_dir):
+            os.mkdir(out_dir)
         ''' save object data into a file that can be loaded back in later '''
         if None in self.matrices:
             raise ValueError("Matrices haven't been computed so we can't save them.")
         if self.flare_spectrum is None:
-            raise ValueError("Given FlareSpectrum is None--simulation probably hasn't run.")
+            raise ValueError("Stored FlareSpectrum is None--simulation probably hasn't run.")
 
         to_save = dict()
         to_save[self.KAL_THICKNESS] = self.al_thick
@@ -112,6 +125,6 @@ class HafxSimulationContainer:
 
         for k in self.MATRIX_KEYS:
             to_save[k] = self.matrices[k]
-        outfn = os.path.join(self.SAVE_DIRECTORY, self.gen_file_name(prefix or ''))
+        outfn = os.path.join(out_dir, self.gen_file_name(prefix or ''))
         np.savez_compressed(outfn, **to_save)
 

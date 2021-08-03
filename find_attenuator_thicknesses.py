@@ -10,13 +10,13 @@ from sim_src.FlareSpectrum import FlareSpectrum, battaglia_iter
 
 def count_edge(cts, target, dt):
     '''
-    when we want to in the thickness-finding loop.
+    when we want to change something in the thickness-finding loop.
         with positive increment, cts < target, i.e. too much attenuation
         with negative increment, cts > target, i.e. attenuator is too thin
     '''
     if dt > 0: return cts < target
     elif dt < 0: return cts > target
-    else: raise ValueError("dt indistinguishable from zero")
+    else: raise ValueError("thickness change indistinguishable from zero")
 
 
 def appr_count_step(sim_con, target_cps):
