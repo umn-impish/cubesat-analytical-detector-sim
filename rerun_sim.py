@@ -1,4 +1,3 @@
-import sim_src.impress_constants as ic
 from HafxSimulationContainer import HafxSimulationContainer
 import os
 

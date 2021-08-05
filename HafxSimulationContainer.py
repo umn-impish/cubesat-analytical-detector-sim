@@ -1,29 +1,16 @@
 import numpy as np
 import os
-import sys
 
 import sim_src.impress_constants as ic
 from sim_src.FlareSpectrum import FlareSpectrum
-from sim_src.AttenuationData import AttenuationData
-from sim_src.Material import Material
-from sim_src.PhotonDetector import Sipm3000
-from HafxStack import HafxStack
-
-def gen_hafx_stack(al_thick: np.float64):
-    ''' put the HaFX materials in the right order (variable aluminum thickness)'''
-    mat_order = ic.HAFX_MATERIAL_ORDER
-    materials = []
-    for name in mat_order:
-        thick = al_thick if name == ic.AL else ic.THICKNESSES[name]
-        rho = ic.DENSITIES[name]
-        atten_dat = AttenuationData.from_nist_file(ic.ATTEN_FILES[name])
-        materials.append(Material(ic.DIAMETER, thick, rho, atten_dat))
-    return HafxStack(materials, Sipm3000())
-
+from HafxStack import HafxStack, SINGLE_DET_AREA
 
 class HafxSimulationContainer:
-    MIN_THRESHOLD_ENG = ic.MIN_THRESHOLD_ENG
-    MAX_THRESHOLD_ENG = ic.MAX_THRESHOLD_ENG
+    MIN_THRESHOLD_ENG = 8.0     # keV
+    MAX_THRESHOLD_ENG = 100.0   # keV
+    MIN_ENG = 1.0               # keV
+    MAX_ENG = 300.0             # keV
+    DE = 0.1                    # keV
 
     KAL_THICKNESS = 'al_thickness'
     KFLARE_THERMAL = 'thermal'
@@ -60,7 +47,7 @@ class HafxSimulationContainer:
         return ret
 
     def __init__(self, aluminum_thickness: np.float64=None, flare_spectrum: FlareSpectrum=None):
-        self.detector_stack = gen_hafx_stack(aluminum_thickness)
+        self.detector_stack = HafxStack()
         self.al_thick = aluminum_thickness
         self.matrices = {k: None for k in self.MATRIX_KEYS}
         self.flare_spectrum = flare_spectrum
@@ -81,13 +68,13 @@ class HafxSimulationContainer:
                     self.flare_spectrum.energies <= self.MAX_THRESHOLD_ENG)
             dispersed_flare = np.matmul(self.matrices[self.KDISPERSED_RESPONSE], self.flare_spectrum.flare)
             relevant_cps = np.trapz(
-                dispersed_flare[restrict] * ic.SINGLE_DET_AREA, x=self.flare_spectrum.energies[restrict])
+                dispersed_flare[restrict] * SINGLE_DET_AREA, x=self.flare_spectrum.energies[restrict])
 
             # "set" effective area to zero if we get more than the threshold counts
             if relevant_cps > cps_threshold:
                 return np.zeros_like(self.flare_spectrum.energies)
 
-        area_vector = np.ones_like(self.flare_spectrum.energies) * ic.SINGLE_DET_AREA
+        area_vector = np.ones_like(self.flare_spectrum.energies) * SINGLE_DET_AREA
         att_area = np.matmul(self.matrices[self.KPURE_RESPONSE], area_vector)
         return att_area
 
@@ -118,6 +105,7 @@ class HafxSimulationContainer:
             raise ValueError("Stored FlareSpectrum is None--simulation probably hasn't run.")
 
         to_save = dict()
+        # maybe rethink what we save: really only need the GOES class and energy bounds/dE
         to_save[self.KAL_THICKNESS] = self.al_thick
         to_save[self.KFLARE_THERMAL] = self.flare_spectrum.thermal
         to_save[self.KFLARE_NONTHERMAL] = self.flare_spectrum.nonthermal

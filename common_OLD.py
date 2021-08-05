@@ -5,7 +5,7 @@ import os
 
 import sim_src.impress_constants as ic
 from sim_src.AttenuationData import AttenuationData
-from sim_src.DetectorStack import HafxStack
+from HafxStack import HafxStack
 from sim_src.FlareSpectrum import FlareSpectrum
 from sim_src.Material import Material
 from sim_src.PhotonDetector import Sipm3000

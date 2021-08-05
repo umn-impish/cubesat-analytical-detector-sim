@@ -2,34 +2,29 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-import common
-from AttenuationData import AttenuationType
-from FlareSpectrum import FlareSpectrum
-import impress_constants as ic
+from sim_src.AttenuationData import AttenuationType
+from sim_src.FlareSpectrum import FlareSpectrum
+from HafxSimulationContainer import HafxSimulationContainer
+from HafxStack import HafxStack, SINGLE_DET_AREA
 
-fns = os.listdir(os.path.join(ic.DATA_DIR, 'optimized'))
-thicks = dict()
-for fn in fns:
-    sz, t = fn.split('_')[:2]
-    thicks[sz] = float(t)
+data_dir = 'optimized-2-aug-2021'
+fig_dir = 'figures'
 
 det_stacks = dict()
-for k, thick in thicks.items():
-    det_stacks[k] = common.generate_impress_stack(ic.HAFX_MATERIAL_ORDER, al_thick=thick)
-
-# we only want effective area. actual spectrum doesn't matter.
-energies = np.arange(ic.E_MIN, ic.E_MAX, step=ic.DE)
-dummy_fs = FlareSpectrum.dummy(energies)
+for fn in (os.path.join(data_dir, bfn) for bfn in os.listdir(data_dir)):
+    sim_con = HafxSimulationContainer.from_saved_file(fn)
+    det_stacks[sim_con.flare_spectrum.goes_class] = sim_con.detector_stack
 
 rayleigh_only = dict()
 phot_only = dict()
-avec = np.ones(dummy_fs.energies.size) * ic.SINGLE_DET_AREA
+energies = sim_con.flare_spectrum.energies
+avec = np.ones(energies.size) * SINGLE_DET_AREA
 for k, ds in det_stacks.items():
     print(f"calculating eff area for {k}")
     rayleigh_only[k] = np.matmul(
-            ds.generate_detector_response_to(dummy_fs, False, [AttenuationType.RAYLEIGH]), avec)
+            ds.generate_detector_response_to(sim_con.flare_spectrum, False, [AttenuationType.RAYLEIGH]), avec)
     phot_only[k] = np.matmul(
-            ds.generate_detector_response_to(dummy_fs, False, [AttenuationType.PHOTOELECTRIC_ABSORPTION]), avec)
+            ds.generate_detector_response_to(sim_con.flare_spectrum, False, [AttenuationType.PHOTOELECTRIC_ABSORPTION]), avec)
 
 fig, axs = plt.subplots(1, 2)
 for k in rayleigh_only.keys():
@@ -47,4 +42,4 @@ for ax in axs:
     ax.legend()
 
 fig.set_size_inches(16, 8)
-plt.savefig(os.path.join(ic.FIG_DIR, 'effa-diff-scattering.pdf'))
+plt.savefig(os.path.join(fig_dir, 'effa-diff-scattering.pdf'))
