@@ -7,7 +7,7 @@ from sim_src.FlareSpectrum import FlareSpectrum
 from sim_src.AttenuationData import AttenuationData
 from sim_src.Material import Material
 from sim_src.PhotonDetector import Sipm3000
-from sim_src.DetectorStack import HafxStack
+from HafxStack import HafxStack
 
 def gen_hafx_stack(al_thick: np.float64):
     ''' put the HaFX materials in the right order (variable aluminum thickness)'''
