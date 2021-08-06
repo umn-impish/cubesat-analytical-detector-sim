@@ -85,10 +85,14 @@ class HafxStack(DetectorStack):
         response = self._generate_material_response_due_to(incident_spectrum, chosen_attenuations)
         if self.enable_scintillator:
             # now incorporate the scintillator
-            ident = np.identity(incident_spectrum.energies.size)
-            # we must include photoelectric absorption as this mechanism leads to scintillation.
-            abs_atts = list(set([AttenuationType.PHOTOELECTRIC_ABSORPTION] + chosen_attenuations))
-            absorbed = ident - self.scintillator.generate_overall_response_matrix_given(incident_spectrum, abs_atts)
+            absorbed = self.generate_scintillator_response(incident_spectrum, chosen_attenuations)
             response = np.matmul(absorbed, response)
         return self._dispatch_dispersion(incident_spectrum, response, disperse_energy)
 
+    def generate_scintillator_response(self, incident_spectrum: FlareSpectrum, chosen_attenuations: list) -> np.ndarray:
+        ident = np.identity(incident_spectrum.energies.size)
+        # we must include photoelectric absorption as this mechanism leads to scintillation.
+        abs_atts = list(set([AttenuationType.PHOTOELECTRIC_ABSORPTION] + chosen_attenuations))
+        # XXX: only dimensions of incident_spectrum used in this call. confusing...
+        absorbed = ident - self.scintillator.generate_overall_response_matrix_given(incident_spectrum, abs_atts)
+        return absorbed

@@ -93,9 +93,10 @@ class HafxSimulationContainer:
                 .apply_detector_dispersion_for(self.flare_spectrum, self.matrices[self.KPURE_RESPONSE])
 
     def gen_file_name(self, prefix):
-        return f"{prefix}_{self.flare_spectrum.goes_class}_{self.al_thick:.3e}cm_hafx"
+        gc = self.flare_spectrum.goes_class
+        return f"{prefix or 'no_prefix'}_{gc or 'no_goes'}_{self.al_thick:.3e}cm_hafx"
 
-    def save_to_file(self, out_dir=DEFAULT_SAVE_DIR, prefix=None):
+    def save_to_file(self, out_dir=DEFAULT_SAVE_DIR, prefix=''):
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
         ''' save object data into a file that can be loaded back in later '''
@@ -113,6 +114,6 @@ class HafxSimulationContainer:
 
         for k in self.MATRIX_KEYS:
             to_save[k] = self.matrices[k]
-        outfn = os.path.join(out_dir, self.gen_file_name(prefix or ''))
+        outfn = os.path.join(out_dir, self.gen_file_name(prefix))
         np.savez_compressed(outfn, **to_save)
 
