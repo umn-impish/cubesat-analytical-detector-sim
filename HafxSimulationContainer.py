@@ -6,11 +6,11 @@ from sim_src.FlareSpectrum import FlareSpectrum
 from HafxStack import HafxStack, SINGLE_DET_AREA
 
 class HafxSimulationContainer:
-    MIN_THRESHOLD_ENG = 8.0     # keV
-    MAX_THRESHOLD_ENG = 100.0   # keV
     MIN_ENG = 1.0               # keV
     MAX_ENG = 300.0             # keV
     DE = 0.1                    # keV
+    MIN_THRESHOLD_ENG = MIN_ENG # keV
+    MAX_THRESHOLD_ENG = MAX_ENG # keV
 
     KAL_THICKNESS = 'al_thickness'
     KFLARE_THERMAL = 'thermal'

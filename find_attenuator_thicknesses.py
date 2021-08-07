@@ -4,7 +4,17 @@ from scipy.integrate import simpson
 
 from HafxSimulationContainer import HafxSimulationContainer
 from HafxStack import HAFX_DEAD_TIME, SINGLE_DET_AREA
-from sim_src.FlareSpectrum import FlareSpectrum, battaglia_iter
+from sim_src.FlareSpectrum import FlareSpectrum
+
+
+def battaglia_iter(goes_classes: str):
+    for gc in goes_classes:
+        yield FlareSpectrum.make_with_battaglia_scaling(
+            gc,
+            HafxSimulationContainer.MIN_ENG,
+            HafxSimulationContainer.MAX_ENG,
+            HafxSimulationContainer.DE
+        )
 
 
 def count_edge(cts, target, dt):

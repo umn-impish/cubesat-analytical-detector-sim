@@ -14,11 +14,6 @@ def goes_class_lookup(flare_specifier: str) -> np.float64:
     return GOES_PREFIX[ch] * mul
 
 
-def battaglia_iter(goes_classes: str):
-    for gc in goes_classes:
-        yield FlareSpectrum.make_with_battaglia_scaling(gc, ic.MIN_ENG, ic.MAX_ENG, ic.DE)
-
-
 class BattagliaParameters:
     # see Battaglia et al., https://arxiv.org/abs/astro-ph/0505154v1
     # equations: 11, 12, 8
