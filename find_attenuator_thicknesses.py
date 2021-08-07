@@ -17,14 +17,14 @@ def battaglia_iter(goes_classes: str):
         )
 
 
-def count_edge(cts, target, dt):
+def count_edge(cts, target, step_sgn):
     '''
     when we want to change something in the thickness-finding loop.
         with positive increment, cts < target, i.e. too much attenuation
         with negative increment, cts > target, i.e. attenuator is too thin
     '''
-    if dt > 0: return cts < target
-    elif dt < 0: return cts > target
+    if step_sgn > 0: return cts < target
+    elif step_sgn < 0: return cts > target
     else: raise ValueError("thickness change indistinguishable from zero")
 
 
@@ -34,22 +34,23 @@ def appr_count_step(sim_con, target_cps):
     zigzag around target count rate until we're close enough for gov't work (below and within 5%)
     '''
     eng = sim_con.flare_spectrum.energies
-    step = -1 * sim_con.al_thick / 10
+    step = -sim_con.al_thick / 2
     divs = 0
     TOL = 0.05
     MAX_DIVS = 8
     restrict = np.logical_and(eng >= sim_con.MIN_THRESHOLD_ENG, eng <= sim_con.MAX_THRESHOLD_ENG)
 
-    while divs < MAX_DIVS and sim_con.al_thick > 0:
+    while divs < MAX_DIVS and sim_con.al_thick > (-1e-6):
         print(f"{sim_con.flare_spectrum.goes_class}: {sim_con.al_thick:.4e} cm")
         sim_con.simulate()
         counts_per_kev = np.matmul(sim_con.matrices[sim_con.KDISPERSED_RESPONSE], sim_con.flare_spectrum.flare) * SINGLE_DET_AREA
         cur_counts = simpson(counts_per_kev[restrict], x=eng[restrict])
+        print("Counts: ", cur_counts)
         if count_edge(cur_counts, target_cps, step):
             print("Found the count edge.\n", f"Counts: {cur_counts}, thickness: {sim_con.al_thick:.4e} cm")
-            step /= -10
+            step /= -2
             divs += 1
-        sim_con.al_thick = sim_con.al_thick + step
+        sim_con.al_thick += step
         delta = 1 - cur_counts/target_cps
         if abs(delta) < TOL and delta > 0:
             break
@@ -64,11 +65,17 @@ def appr_count_step(sim_con, target_cps):
     sim_con.al_thick = clean_thick
 
 
-def find_appropriate_counts(goes_classes, initial_thickness, target_cps):
+def find_appropriate_counts(class_thick, target_cps):
     ''' optimize attenuator window for target_cps given various GOES flare sizes '''
-    for fs in battaglia_iter(goes_classes):
+    for gc, thick in class_thick.items():
+        fs = FlareSpectrum.make_with_battaglia_scaling(
+            gc,
+            HafxSimulationContainer.MIN_ENG,
+            HafxSimulationContainer.MAX_ENG,
+            HafxSimulationContainer.DE
+        )
         sim_container = HafxSimulationContainer(
-            aluminum_thickness=initial_thickness,
+            aluminum_thickness=thick,
             flare_spectrum=fs)
         # populates matrices of detector_stack
         appr_count_step(sim_container, target_cps)
@@ -77,7 +84,13 @@ def find_appropriate_counts(goes_classes, initial_thickness, target_cps):
 
 
 if __name__ == '__main__':
-    classes = ('C1', 'C5', 'M1', 'M5', 'X1')
-    init_thick = 0.1    # cm
+    # need to be greater than necessary (loop starts by decr. thickness)
+    class_thickness = {
+#            'C1': 0.001,
+#            'C5': 0.001,
+#            'M1': 6e-3,
+#            'M5': 6e-3,
+            'X1': 6e-2
+        }
     target_cps = -np.log(0.95) / HAFX_DEAD_TIME
-    find_appropriate_counts(classes, init_thick, target_cps)
+    find_appropriate_counts(class_thickness, target_cps)

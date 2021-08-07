@@ -8,7 +8,7 @@ import sim_src.impress_constants as ic
 
 
 fig_dir = 'figures'
-optim_dir = 'optimized-2-aug-2021'
+optim_dir = 'optimized-7-aug-2021'
 files = os.listdir(optim_dir)
 thresh_counts = -1 * np.log(0.95) / HAFX_DEAD_TIME
 chosen_ones = ('C1', 'M1', 'M5', 'X1')
@@ -46,16 +46,16 @@ for i, simmed in enumerate(chosen_ones):
     ax.set_xscale('log')
     ax.set_yscale('linear')
 
+    fula_kwargs = {'label': "Geometric detector area"} if i == 0 else {}
     tefa_kwargs = {'label': "Total effective area"} if i == 0 else {}
-    fula_kwargs = {'label': "Total (true) detector area"} if i == 0 else {}
-    ax.plot(energies, total_area, **tefa_kwargs)
     ax.axhline(y=FULL_AREA, linestyle='--', **fula_kwargs)
+    ax.plot(energies, total_area, **tefa_kwargs)
     for j, a in enumerate(all_areas):
         gc = original_spectra[id(containers[j])]
         al_thick = containers[j].al_thick
         kwargz = dict()
         if i == 0:
-            kwargz['label'] = f"{gc}, {al_thick:.1e}cm Al eff. area"
+            kwargz['label'] = f"{gc} detector eff. area"
         ax.plot(energies, a, **kwargz)
     ax.legend()
 
@@ -70,7 +70,7 @@ for i, simmed in enumerate(chosen_ones):
     for c in containers:
         lab = original_spectra[id(c)]
         att_spec = np.matmul(c.matrices[c.KDISPERSED_RESPONSE], flare)
-        ax.plot(energies, att_spec, label=f"{lab} optimized, {c.al_thick:.1e}cm Al")
+        ax.plot(energies, att_spec, label=f"{lab} detector, {c.al_thick*1e4:.0f}um Al")
     ax.legend()
 
 # restore the changed flare spectra
