@@ -22,19 +22,22 @@ def load_example(remake: bool) -> HafxSimulationContainer:
     print("creating from scratch this time")
     num_energies = 1000
     ex_spectrum = np.zeros(num_energies)
-    start_idx = num_energies//4
-    ex_spectrum[start_idx:start_idx+50] = 10       # photons/sec i guess
+    start_idx = 10
+    end_idx = 100
+    ex_spectrum[start_idx:end_idx] = 1e6      # photons/sec i guess
     energies = np.linspace(1, 300, num=num_energies)
     ex_fs = FlareSpectrum('', energies, ex_spectrum, np.zeros(num_energies))
 
     example_thick = 0.1        # cm
-    con = HafxSimulationContainer(aluminum_thickness=example_thick, flare_spectrum=ex_fs)
+    con = HafxSimulationContainer(aluminum_thickness=example_thick, flare_spectrum=ex_fs, save_minimal=False)
     con.simulate()
     con.save_to_file(prefix=base_fn)
     return con
 
-# container = load_example(True)
-container = HafxSimulationContainer.from_saved_file('optimized-2-aug-2021/optimized_M5_2.800e-02cm_hafx.npz')
+#container = load_example(True)
+target_dir = 'optimized-9-aug-2021'
+opt_fn = next(fn for fn in os.listdir(target_dir) if 'M5' in fn)
+container = HafxSimulationContainer.from_saved_file(os.path.join(target_dir, opt_fn))
 
 # pull out the stuff we need from the container
 ds = container.detector_stack
@@ -61,12 +64,16 @@ material_ord = ['Original'] + HAFX_MATERIAL_ORDER + ['Energy dispersion']
 fig, ax = plt.subplots()
 ax.set_ylim(1e-4, 1e9)
 # ax.set_xlim(20, 150)
+ax.set_xlabel('Energy (keV)')
+ax.set_ylabel('Example spectrum (counts / keV / cm${}^2$ / s)')
 ax.set_yscale('log')
 ax.set_xscale('log')
-fig.tight_layout()
+fig.set_size_inches(8, 6)
 i = 0
 for (spectrum, mat_name) in zip(att_spectra, material_ord):
-    ax.plot(fs.energies, spectrum + 1e-8, label=f"After {mat_name}")
+    ax.set_title('M5 example solar flare')
+    ax.plot(fs.energies, spectrum + 1e-8, label=f"{'After ' if i > 0 else ''}{mat_name}")
     ax.legend()
+    fig.tight_layout()
     fig.savefig(f"figures/progressive_attenuation{i}.png")
     i += 1

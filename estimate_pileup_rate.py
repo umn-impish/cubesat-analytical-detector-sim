@@ -11,7 +11,7 @@ def pileup_fraction_estimate(count_rate, pileup_time):
     # integrate probability density function from 0 to the pileup time
     return scipy.integrate.quad(pdf, 0, pileup_time)
 
-optim_dir = 'optimized-7-aug-2021'
+optim_dir = 'optimized-10-aug-2021'
 pileup_time = 0.75 * 1e-6       # microsecond
 opt_files = os.listdir(optim_dir)
 

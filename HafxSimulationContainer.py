@@ -1,7 +1,7 @@
+import inspect
 import numpy as np
 import os
 
-import sim_src.impress_constants as ic
 from sim_src.FlareSpectrum import FlareSpectrum
 from HafxStack import HafxStack, SINGLE_DET_AREA
 
@@ -12,36 +12,41 @@ class HafxSimulationContainer:
     MIN_THRESHOLD_ENG = MIN_ENG # keV
     MAX_THRESHOLD_ENG = MAX_ENG # keV
 
+    KMINIMAL = 'minimal'
     KAL_THICKNESS = 'al_thickness'
+    KGOES_CLASS = 'goes_class'
+    KMINE = 'min_e'
+    KMAXE = 'max_e'
+    KDE = 'de'
+
+    KENERGIES = 'energies'
     KFLARE_THERMAL = 'thermal'
     KFLARE_NONTHERMAL = 'nonthermal'
-    KENERGIES = 'energies'
+
     KPURE_RESPONSE = 'pure_response_matrix'
     KDISPERSED_RESPONSE = 'dispersed_response_matrix'
-    KEFFECTIVE_AREA = 'effective_area'
-    KGOES_CLASS = 'goes_class'
-    MATRIX_KEYS = (
-        KDISPERSED_RESPONSE, KPURE_RESPONSE
-    )
+    MATRIX_KEYS = (KDISPERSED_RESPONSE, KPURE_RESPONSE)
+
     DEFAULT_SAVE_DIR = 'responses-and-areas'
 
     @classmethod
     def from_saved_file(cls, filename: str):
         ''' load the container from a (compressed) .npz file '''
         data = np.load(filename)
-
         try:
-            goes_class = data[cls.KGOES_CLASS]
+            goes_class = str(data[cls.KGOES_CLASS])
         except KeyError as e:
+            print("KeyError:", '; '.join(e.args))
+            # some old sims didn't save the GOES class explicitly
             goes_class = filename.split('_')[-3]
+
         fs = FlareSpectrum(
-                goes_class,
-                data[cls.KENERGIES],
-                data[cls.KFLARE_THERMAL],
-                data[cls.KFLARE_NONTHERMAL])
+            goes_class,
+            data[cls.KENERGIES],
+            data[cls.KFLARE_THERMAL],
+            data[cls.KFLARE_NONTHERMAL])
 
         ret = cls(aluminum_thickness=data[cls.KAL_THICKNESS], flare_spectrum=fs)
-        ret.flare_spectrum = fs
         for k in cls.MATRIX_KEYS:
             ret.matrices[k] = data[k]
         return ret
@@ -66,7 +71,11 @@ class HafxSimulationContainer:
             restrict = np.logical_and(
                     self.flare_spectrum.energies >= self.MIN_THRESHOLD_ENG,
                     self.flare_spectrum.energies <= self.MAX_THRESHOLD_ENG)
-            dispersed_flare = np.matmul(self.matrices[self.KDISPERSED_RESPONSE], self.flare_spectrum.flare)
+            try:
+                dispersed_flare = np.matmul(self.matrices[self.KDISPERSED_RESPONSE], self.flare_spectrum.flare)
+            except ValueError:
+                print(self.matrices[self.KDISPERSED_RESPONSE])
+                raise
             relevant_cps = np.trapz(
                 dispersed_flare[restrict] * SINGLE_DET_AREA, x=self.flare_spectrum.energies[restrict])
 
@@ -96,7 +105,7 @@ class HafxSimulationContainer:
         gc = self.flare_spectrum.goes_class
         return f"{prefix or 'no_prefix'}_{gc or 'no_goes'}_{self.al_thick:.3e}cm_hafx"
 
-    def save_to_file(self, out_dir=DEFAULT_SAVE_DIR, prefix=''):
+    def save_to_file(self, out_dir=DEFAULT_SAVE_DIR, prefix=None):
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
         ''' save object data into a file that can be loaded back in later '''
@@ -106,8 +115,9 @@ class HafxSimulationContainer:
             raise ValueError("Stored FlareSpectrum is None--simulation probably hasn't run.")
 
         to_save = dict()
-        # maybe rethink what we save: really only need the GOES class and energy bounds/dE
+        to_save[self.KGOES_CLASS] = self.flare_spectrum.goes_class
         to_save[self.KAL_THICKNESS] = self.al_thick
+
         to_save[self.KFLARE_THERMAL] = self.flare_spectrum.thermal
         to_save[self.KFLARE_NONTHERMAL] = self.flare_spectrum.nonthermal
         to_save[self.KENERGIES] = self.flare_spectrum.energies

@@ -8,7 +8,7 @@ import sim_src.impress_constants as ic
 
 
 fig_dir = 'figures'
-optim_dir = 'optimized-7-aug-2021'
+optim_dir = 'optimized-10-aug-2021'
 files = os.listdir(optim_dir)
 thresh_counts = -1 * np.log(0.95) / HAFX_DEAD_TIME
 chosen_ones = ('C1', 'M1', 'M5', 'X1')
@@ -57,7 +57,7 @@ for i, simmed in enumerate(chosen_ones):
         if i == 0:
             kwargz['label'] = f"{gc} detector eff. area"
         ax.plot(energies, a, **kwargz)
-    ax.legend()
+        if i == 0: ax.legend()
 
     ax = axs[1, i]
     ax.set_ylim(1e-4, 1e9)
@@ -77,6 +77,6 @@ for i, simmed in enumerate(chosen_ones):
 for c in containers:
     c.flare_spectrum = flare_spectra[original_spectra[id(c)]]
 
-fig.set_size_inches(24, 9.6)
+fig.set_size_inches(24, 10)
 plt.tight_layout()
-plt.savefig(os.path.join(fig_dir, 'big-boi.pdf'))
+plt.savefig(os.path.join(fig_dir, 'big-boi.png'))

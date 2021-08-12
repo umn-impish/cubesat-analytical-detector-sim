@@ -34,6 +34,7 @@ class Material:
     def _gen_phot_ray(self, which, incident_spectrum: FlareSpectrum) -> np.ndarray:
         interpolated_attenuations = self.attenuation_data.interpolate_from(incident_spectrum)
         relevant_attenuation = interpolated_attenuations.attenuations[which]
+        # XXX: this should be a multiplication here not a division (check units to convince yourself)
         exponent = -1 * relevant_attenuation * self.mass_density * self.thickness
         actual_attenuation = np.exp(exponent)
         return np.diag(actual_attenuation)

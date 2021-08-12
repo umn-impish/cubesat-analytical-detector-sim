@@ -3,7 +3,7 @@ import numpy as np
 from scipy.integrate import simpson
 
 from HafxSimulationContainer import HafxSimulationContainer
-from HafxStack import HAFX_DEAD_TIME, SINGLE_DET_AREA
+import HafxStack
 from sim_src.FlareSpectrum import FlareSpectrum
 
 
@@ -25,7 +25,7 @@ def count_edge(cts, target, step_sgn):
     '''
     if step_sgn > 0: return cts < target
     elif step_sgn < 0: return cts > target
-    else: raise ValueError("thickness change indistinguishable from zero")
+    else: raise ValueError("step is indistinguishible from zero")
 
 
 def appr_count_step(sim_con, target_cps):
@@ -37,13 +37,13 @@ def appr_count_step(sim_con, target_cps):
     step = -sim_con.al_thick / 2
     divs = 0
     TOL = 0.05
-    MAX_DIVS = 8
+    MAX_DIVS = 16
     restrict = np.logical_and(eng >= sim_con.MIN_THRESHOLD_ENG, eng <= sim_con.MAX_THRESHOLD_ENG)
 
     while divs < MAX_DIVS and sim_con.al_thick > (-1e-6):
         print(f"{sim_con.flare_spectrum.goes_class}: {sim_con.al_thick:.4e} cm")
         sim_con.simulate()
-        counts_per_kev = np.matmul(sim_con.matrices[sim_con.KDISPERSED_RESPONSE], sim_con.flare_spectrum.flare) * SINGLE_DET_AREA
+        counts_per_kev = np.matmul(sim_con.matrices[sim_con.KDISPERSED_RESPONSE], sim_con.flare_spectrum.flare) * HafxStack.SINGLE_DET_AREA
         cur_counts = simpson(counts_per_kev[restrict], x=eng[restrict])
         print("Counts: ", cur_counts)
         if count_edge(cur_counts, target_cps, step):
@@ -86,11 +86,11 @@ def find_appropriate_counts(class_thick, target_cps):
 if __name__ == '__main__':
     # need to be greater than necessary (loop starts by decr. thickness)
     class_thickness = {
-#            'C1': 0.001,
-#            'C5': 0.001,
-#            'M1': 6e-3,
-#            'M5': 6e-3,
-            'X1': 6e-2
+            'C1': 0.1,
+            'C5': 0.1,
+            'M1': 0.1,
+            'M5': 0.1,
+            'X1': 0.1
         }
-    target_cps = -np.log(0.95) / HAFX_DEAD_TIME
+    target_cps = -np.log(0.95) / HafxStack.HAFX_DEAD_TIME
     find_appropriate_counts(class_thickness, target_cps)

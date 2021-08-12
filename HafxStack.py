@@ -14,7 +14,7 @@ BE = 'Be'
 CEBR3 = 'CeBr3'
 # order on HaFX detector
 HAFX_MATERIAL_ORDER = [AL, TEF, BE, CEBR3]
-HAFX_DEAD_TIME = 1e-6       # s
+HAFX_DEAD_TIME = 0.5e-6     # s
 
 '''
 NB: these all need to get re-verified. i just took them from Ethan's code.
