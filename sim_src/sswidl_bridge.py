@@ -107,7 +107,7 @@ if __name__ == '__main__':
     nonthermal = power_law_with_pivot(energy_vec, bp.flux_35kev, bp.spectral_index, 35.0)
     pt, em = bp.gen_vth_params()
     #           eng_start, eng_end, de,  emission_measure, plasma_temp, relative_abundance
-    vth_args = [ENG_START, ENG_END, 0.1, em, pt, 1.0]
+    vth_args = [ENG_START, ENG_END, 0.1, em,               pt,          1.0]
     print(vth_args)
     vth_res = run_sswidl_script(vth_name, *vth_args)
     thermal = clean_table_output(vth_res)

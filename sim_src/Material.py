@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 from .AttenuationData import AttenuationData, AttenuationType
 from .FlareSpectrum import FlareSpectrum
@@ -37,6 +38,11 @@ class Material:
         # XXX: this should be a multiplication here not a division (check units to convince yourself)
         exponent = -1 * relevant_attenuation * self.mass_density * self.thickness
         actual_attenuation = np.exp(exponent)
+        if which == AttenuationType.PHOTOELECTRIC_ABSORPTION:
+            pass
+            # make a copy in case we accidentally modify the array in the function
+            # note 13 september 2021: switching mostly to Geant4 for more complicated stuff. secondary x-rays dropped from this simulation
+            # actual_attenuation += self.gen_char_xrays(copy.deepcopy(actual_attenuation), incident_spectrum)
         return np.diag(actual_attenuation)
 
     def _gen_photo(self, incident_spectrum: FlareSpectrum) -> np.ndarray:
@@ -51,3 +57,6 @@ class Material:
         '''
         # do nothing
         return np.identity(incident_spectrum.energies.shape[0])
+
+    def gen_char_xrays(self, photoelec_att: np.ndarray, inc: FlareSpectrum):
+        raise NotImplementedError

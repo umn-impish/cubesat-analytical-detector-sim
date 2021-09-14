@@ -43,16 +43,15 @@ class BattagliaParameters:
 
 
 class FlareSpectrum:
-    # NB: this might not be the best way to organize this, it's just how i first thought to do it
     @classmethod
     def make_with_battaglia_scaling(cls, goes_class: str, start_energy: np.float64,
                                     end_energy: np.float64, de: np.float64, rel_abun: np.float64 = 1.0):
         ''' goes flux in W/m2, energies in keV '''
         bp = BattagliaParameters(goes_class_lookup(goes_class))
-        energies = np.arange(start_energy, end_energy+de, de)                              # keV
+        energies = np.arange(start_energy, end_energy+de, de)                           # keV
         good_pt, good_em = bp.gen_vth_params()                                          # (keV, 1e49particle2 / cm3)
         thermal_spec = f_vth_bridge(
-                start_energy, end_energy+de, de, good_em, good_pt, rel_abun)               # photon / (s cm2 keV)
+                start_energy, end_energy, de, good_em, good_pt, rel_abun)               # photon / (s cm2 keV)
         nonthermal_spec = power_law_with_pivot(
                 energies, bp.reference_flux, bp.spectral_index, bp.reference_energy)    # photon / (s cm2 keV)
 
