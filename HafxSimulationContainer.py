@@ -30,7 +30,7 @@ class HafxSimulationContainer:
     DEFAULT_SAVE_DIR = 'responses-and-areas'
 
     @classmethod
-    def from_saved_file(cls, filename: str):
+    def from_saved_file(cls, filename: str, remake_spectrum=False):
         ''' load the container from a (compressed) .npz file '''
         data = np.load(filename)
         try:
@@ -40,11 +40,17 @@ class HafxSimulationContainer:
             # some old sims didn't save the GOES class explicitly
             goes_class = filename.split('_')[-3]
 
-        fs = FlareSpectrum(
-            goes_class,
-            data[cls.KENERGIES],
-            data[cls.KFLARE_THERMAL],
-            data[cls.KFLARE_NONTHERMAL])
+        if remake_spectrum:
+            e = data[cls.KENERGIES]
+            fs = FlareSpectrum.make_with_battaglia_scaling(
+                goes_class, min(e), max(e), e[1] - e[0])
+
+        else:
+            fs = FlareSpectrum(
+                goes_class,
+                data[cls.KENERGIES],
+                data[cls.KFLARE_THERMAL],
+                data[cls.KFLARE_NONTHERMAL])
 
         ret = cls(aluminum_thickness=data[cls.KAL_THICKNESS], flare_spectrum=fs)
         for k in cls.MATRIX_KEYS:
@@ -65,6 +71,10 @@ class HafxSimulationContainer:
     def al_thick(self, new):
         self.__al_thick = new
         self.detector_stack.materials[0].thickness = new
+
+    @property
+    def goes_class(self):
+        return self.flare_spectrum.goes_class
 
     def compute_effective_area(self, cps_threshold: np.int64=0):
         if cps_threshold > 0:

@@ -1,5 +1,5 @@
 import numpy as np
-from .sswidl_bridge import power_law_with_pivot, f_vth_bridge
+from .sswidl_bridge import battaglia_power_law_with_pivot, f_vth_bridge
 from . import impress_constants as ic
 
 GOES_PREFIX = {
@@ -48,13 +48,24 @@ class FlareSpectrum:
                                     end_energy: np.float64, de: np.float64, rel_abun: np.float64 = 1.0):
         ''' goes flux in W/m2, energies in keV '''
         bp = BattagliaParameters(goes_class_lookup(goes_class))
-        energies = np.arange(start_energy, end_energy+de, de)                           # keV
+        # energies = np.arange(start_energy, end_energy, de)                              # keV
         good_pt, good_em = bp.gen_vth_params()                                          # (keV, 1e49particle2 / cm3)
+
+        '''
+        THIS IS HAPPENING HERE AND NOWHERE ELSE
+        '''
+        end_energy += de
+
         thermal_spec = f_vth_bridge(
                 start_energy, end_energy, de, good_em, good_pt, rel_abun)               # photon / (s cm2 keV)
-        nonthermal_spec = power_law_with_pivot(
+
+        energies = np.linspace(start_energy, end_energy, num=thermal_spec.size)
+        nonthermal_spec = battaglia_power_law_with_pivot(
                 energies, bp.reference_flux, bp.spectral_index, bp.reference_energy)    # photon / (s cm2 keV)
 
+#         print(thermal_spec.size, "next is nonthermal", nonthermal_spec.size)
+#         print(energies)
+#         input()
         return cls(goes_class, energies, thermal_spec, nonthermal_spec)
 
     @classmethod

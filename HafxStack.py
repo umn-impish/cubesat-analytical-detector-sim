@@ -18,8 +18,10 @@ HAFX_DEAD_TIME = 0.5e-6     # s
 
 '''
 NB: these all need to get re-verified. i just took them from Ethan's code.
+update 24 sep 2021: updated to match Geant sims (teflon is like 10x thicker than I had. whoops)
+update 28 sep 2021: went back to old thickness; G4 thickness was ridiculous and overattenuating
 '''
-BE_THICKNESS = 0.075        # cm
+BE_THICKNESS = 0.07         # cm
 TEFLON_THICKNESS = 0.0127   # cm
 CEBR3_THICKNESS = 0.5       # cm
 THICKNESSES = {
@@ -35,7 +37,7 @@ ATTEN_BASENAMES = [AL, TEF, BE, CEBR3]
 # attenuation data from:
 #   looked here for reference: https://www.nist.gov/pml/x-ray-mass-attenuation-coefficients
 #   took data from here: https://physics.nist.gov/PhysRefData/Xcom/html/xcom1.html
-#   nb attenuation data must be in same folder as this file. probably should rework this at some point.
+#   nb attenuation data must be in same folder as this file. probably should rework this at some point. (lol not gonna happen, sep2021)
 ATTEN_FILES = {
     abn : os.path.join(
         os.path.dirname(__file__),
@@ -43,9 +45,9 @@ ATTEN_FILES = {
         f"{abn}.tab") for abn in ATTEN_BASENAMES
 }
 
-RHO_AL = 2.699      # g / cm3
-RHO_BE = 1.848      # g / cm3
-RHO_TEF = 2.250     # g / cm3
+RHO_AL = 2.712      # g / cm3
+RHO_BE = 1.850      # g / cm3
+RHO_TEF = 2.200     # g / cm3
 RHO_CEBR3 = 5.1     # g / cm3
 DENSITIES = {
     AL : RHO_AL,
@@ -56,7 +58,7 @@ DENSITIES = {
 
 FULL_AREA = 43                                  # cm2 
 SINGLE_DET_AREA = FULL_AREA / 4                 # cm2
-DIAMETER = 2 * np.sqrt(FULL_AREA / 4 / np.pi)   # cm
+DIAMETER = 3.7                                  # cm
 
 
 def gen_materials(al_thick: np.float64):
@@ -77,7 +79,7 @@ class HafxStack(DetectorStack):
         super().__init__(gen_materials(al_thick), Sipm3000())
         # take off the scintillator to treat it separately
         self.scintillator = self.materials.pop()
-        # XXX: set to True to disable the scintillator (i.e. only disperse spectrum, dont absorb it)
+        # XXX: set to False to disable the scintillator (i.e. only disperse spectrum, dont absorb it)
         self.enable_scintillator = enable_scintillator
 
     def generate_detector_response_to(

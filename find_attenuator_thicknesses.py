@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from scipy.integrate import simpson
+# from scipy.integrate import simpson
 
 from HafxSimulationContainer import HafxSimulationContainer
 import HafxStack
@@ -38,13 +38,13 @@ def appr_count_step(sim_con, target_cps):
     divs = 0
     TOL = 0.05
     MAX_DIVS = 16
-    restrict = np.logical_and(eng >= sim_con.MIN_THRESHOLD_ENG, eng <= sim_con.MAX_THRESHOLD_ENG)
+    restrict = eng > -1 # np.logical_and(eng >= sim_con.MIN_THRESHOLD_ENG, eng <= sim_con.MAX_THRESHOLD_ENG)
 
     while divs < MAX_DIVS and sim_con.al_thick > (-1e-6):
         print(f"{sim_con.flare_spectrum.goes_class}: {sim_con.al_thick:.4e} cm")
         sim_con.simulate()
         counts_per_kev = np.matmul(sim_con.matrices[sim_con.KDISPERSED_RESPONSE], sim_con.flare_spectrum.flare) * HafxStack.SINGLE_DET_AREA
-        cur_counts = simpson(counts_per_kev[restrict], x=eng[restrict])
+        cur_counts = np.trapz(x=eng[restrict], y=counts_per_kev[restrict])
         print("Counts: ", cur_counts)
         if count_edge(cur_counts, target_cps, step):
             print("Found the count edge.\n", f"Counts: {cur_counts}, thickness: {sim_con.al_thick:.4e} cm")
