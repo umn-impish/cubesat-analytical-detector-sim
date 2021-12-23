@@ -21,7 +21,8 @@ def battaglia_power_law_with_pivot(eng_ary, reference_flux, spectral_index, e_pi
     # update 16 september 2021: Ethan's code was not consistent with Battaglia model.
     # updated to have spectral index of 1.5 for E < 50 keV
     # assume energyunits are keV
-    BREAK_ENG = 50
+    # update 30 nov 2021: setting break energy to 10 keV just for the hell of it
+    BREAK_ENG = 10
 
     criterion = eng_ary <= BREAK_ENG
     above_break = reference_flux * ((e_pivot / eng_ary) ** spectral_index)

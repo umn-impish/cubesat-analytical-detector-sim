@@ -76,24 +76,25 @@ class HafxSimulationContainer:
     def goes_class(self):
         return self.flare_spectrum.goes_class
 
-    def compute_effective_area(self, cps_threshold: np.int64=0):
+    def compute_effective_area(self, cps_threshold: np.int64=0, different_flare: FlareSpectrum=None):
+        fspec_of_interest = different_flare or self.flare_spectrum
         if cps_threshold > 0:
             restrict = np.logical_and(
-                    self.flare_spectrum.energies >= self.MIN_THRESHOLD_ENG,
-                    self.flare_spectrum.energies <= self.MAX_THRESHOLD_ENG)
+                    fspec_of_interest.energies >= self.MIN_THRESHOLD_ENG,
+                    fspec_of_interest.energies <= self.MAX_THRESHOLD_ENG)
             try:
-                dispersed_flare = np.matmul(self.matrices[self.KDISPERSED_RESPONSE], self.flare_spectrum.flare)
+                dispersed_flare = np.matmul(self.matrices[self.KDISPERSED_RESPONSE], fspec_of_interest.flare)
             except ValueError:
                 print(self.matrices[self.KDISPERSED_RESPONSE])
                 raise
             relevant_cps = np.trapz(
-                dispersed_flare[restrict] * SINGLE_DET_AREA, x=self.flare_spectrum.energies[restrict])
+                dispersed_flare[restrict] * SINGLE_DET_AREA, x=fspec_of_interest.energies[restrict])
 
             # "set" effective area to zero if we get more than the threshold counts
             if relevant_cps > cps_threshold:
-                return np.zeros_like(self.flare_spectrum.energies)
+                return np.zeros_like(fspec_of_interest.energies)
 
-        area_vector = np.ones_like(self.flare_spectrum.energies) * SINGLE_DET_AREA
+        area_vector = np.ones_like(fspec_of_interest.energies) * SINGLE_DET_AREA
         att_area = np.matmul(self.matrices[self.KPURE_RESPONSE], area_vector)
         return att_area
 

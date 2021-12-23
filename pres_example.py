@@ -35,15 +35,14 @@ def load_example(remake: bool) -> HafxSimulationContainer:
     return con
 
 #container = load_example(True)
-target_dir = 'optimized-9-aug-2021'
+target_dir = 'optimized-16-nov-2021'
 opt_fn = next(fn for fn in os.listdir(target_dir) if 'M5' in fn)
 container = HafxSimulationContainer.from_saved_file(os.path.join(target_dir, opt_fn))
 
 # pull out the stuff we need from the container
 ds = container.detector_stack
 fs = container.flare_spectrum
-att_spectra = list()
-att_spectra.append(fs.flare)
+att_spectra = [fs.flare]
 for mat_obj in ds.materials:
     att_mat = mat_obj.generate_overall_response_matrix_given(fs, AttenuationType.ALL)
     try:
@@ -62,7 +61,7 @@ att_spectra.append(np.matmul(energy_resolution_mtx, att_spectra[-1]))
 
 material_ord = ['Original'] + HAFX_MATERIAL_ORDER + ['Energy dispersion']
 fig, ax = plt.subplots()
-ax.set_ylim(1e-4, 1e9)
+ax.set_ylim(1e-20, 1e9)
 # ax.set_xlim(20, 150)
 ax.set_xlabel('Energy (keV)')
 ax.set_ylabel('Example spectrum (counts / keV / cm${}^2$ / s)')
@@ -72,7 +71,7 @@ fig.set_size_inches(8, 6)
 i = 0
 for (spectrum, mat_name) in zip(att_spectra, material_ord):
     ax.set_title('M5 example solar flare')
-    ax.plot(fs.energies, spectrum + 1e-8, label=f"{'After ' if i > 0 else ''}{mat_name}")
+    ax.plot(fs.energies, spectrum + 1e-50, label=f"{'After ' if i > 0 else ''}{mat_name}")
     ax.legend()
     fig.tight_layout()
     fig.savefig(f"figures/progressive_attenuation{i}.png")
