@@ -36,8 +36,8 @@ def appr_count_step(sim_con, target_cps):
     eng = sim_con.flare_spectrum.energies
     step = -sim_con.al_thick / 2
     divs = 0
-    TOL = 0.05
-    MAX_DIVS = 16
+    TOL = 0.01
+    MAX_DIVS = 32
     restrict = eng > -1 # np.logical_and(eng >= sim_con.MIN_THRESHOLD_ENG, eng <= sim_con.MAX_THRESHOLD_ENG)
 
     while divs < MAX_DIVS and sim_con.al_thick > (-1e-6):

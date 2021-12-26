@@ -1,6 +1,7 @@
+import astropy.units as u
 import numpy as np
-from .sswidl_bridge import battaglia_power_law_with_pivot, f_vth_bridge
-from . import impress_constants as ic
+# from .sswidl_bridge import battaglia_power_law_with_pivot, f_vth_bridge
+import sunxspex.thermal as thermal
 
 GOES_PREFIX = {
     'C': 1e-6,
@@ -12,6 +13,25 @@ GOES_PREFIX = {
 def goes_class_lookup(flare_specifier: str) -> np.float64:
     ch, mul = flare_specifier[0].upper(), float(flare_specifier[1:])
     return GOES_PREFIX[ch] * mul
+
+
+def battaglia_power_law_with_pivot(eng_ary, reference_flux, spectral_index, e_pivot):
+    # same code as f_1pow
+    # just a power law at some reference energy
+
+    # update 16 september 2021: Ethan's code was not consistent with Battaglia model.
+    # updated to have spectral index of 1.5 for E < 50 keV
+    # assume energyunits are keV
+    # update 30 nov 2021: setting break energy to 10 keV just for the hell of it
+    BREAK_ENG = 10
+
+    criterion = eng_ary <= BREAK_ENG
+    above_break = reference_flux * ((e_pivot / eng_ary) ** spectral_index)
+
+    below_ref = above_break[criterion][-1]
+    below_break = below_ref * ((BREAK_ENG / eng_ary) ** 1.5)
+
+    return np.append(below_break[criterion], above_break[np.logical_not(criterion)])
 
 
 class BattagliaParameters:
@@ -43,30 +63,36 @@ class BattagliaParameters:
 
 
 class FlareSpectrum:
+    _ENERGY_LIMITS = (1.001, 200.15)
     @classmethod
     def make_with_battaglia_scaling(cls, goes_class: str, start_energy: np.float64,
-                                    end_energy: np.float64, de: np.float64, rel_abun: np.float64 = 1.0):
+                                    end_energy: np.float64, de: np.float64, rel_abun=1.0):
         ''' goes flux in W/m2, energies in keV '''
         bp = BattagliaParameters(goes_class_lookup(goes_class))
-        # energies = np.arange(start_energy, end_energy, de)                              # keV
-        good_pt, good_em = bp.gen_vth_params()                                          # (keV, 1e49particle2 / cm3)
 
-        '''
-        THIS IS HAPPENING HERE AND NOWHERE ELSE
-        '''
-        end_energy += de
+        edges = np.arange(start_energy, end_energy, step=de)
+        energy_centers = edges[:-1] + np.diff(edges)/2
 
-        thermal_spec = f_vth_bridge(
-                start_energy, end_energy, de, good_em, good_pt, rel_abun)               # photon / (s cm2 keV)
+        thermal_edges = edges[
+            np.logical_and(
+                edges >= FlareSpectrum._ENERGY_LIMITS[0],
+                edges <= FlareSpectrum._ENERGY_LIMITS[1]
+            )
+        ]
 
-        energies = np.linspace(start_energy, end_energy, num=thermal_spec.size)
+        thermal_spec = thermal.thermal_emission(
+            thermal_edges * u.keV, bp.plasma_temp * u.MK,
+            bp.emission_measure * (u.cm**(-3)),
+            abundance_type="sun_coronal",
+            observer_distance=(1 * u.AU).to(u.cm)).value
+
+        # make thermal/nonthermal spectra the same size
+        thermal_spec = np.append(thermal_spec, np.zeros(energy_centers.size - thermal_spec.size))
+
         nonthermal_spec = battaglia_power_law_with_pivot(
-                energies, bp.reference_flux, bp.spectral_index, bp.reference_energy)    # photon / (s cm2 keV)
+                energy_centers, bp.reference_flux, bp.spectral_index, bp.reference_energy)    # photon / (s cm2 keV)
 
-#         print(thermal_spec.size, "next is nonthermal", nonthermal_spec.size)
-#         print(energies)
-#         input()
-        return cls(goes_class, energies, thermal_spec, nonthermal_spec)
+        return cls(goes_class, energy_centers, thermal_spec, nonthermal_spec)
 
     @classmethod
     def dummy(cls, energies: np.ndarray):

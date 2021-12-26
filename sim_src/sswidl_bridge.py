@@ -14,25 +14,6 @@ SSW_IDL_LOCATION = "/usr/local/ssw/gen/setup/ssw_idl"
 CMD_DONE_IDENTIFIER = '*-*' * 10
 
 
-def battaglia_power_law_with_pivot(eng_ary, reference_flux, spectral_index, e_pivot):
-    # same code as f_1pow
-    # just a power law at some reference energy
-
-    # update 16 september 2021: Ethan's code was not consistent with Battaglia model.
-    # updated to have spectral index of 1.5 for E < 50 keV
-    # assume energyunits are keV
-    # update 30 nov 2021: setting break energy to 10 keV just for the hell of it
-    BREAK_ENG = 10
-
-    criterion = eng_ary <= BREAK_ENG
-    above_break = reference_flux * ((e_pivot / eng_ary) ** spectral_index)
-
-    below_ref = above_break[criterion][-1]
-    below_break = below_ref * ((BREAK_ENG / eng_ary) ** 1.5)
-
-    return np.append(below_break[criterion], above_break[np.logical_not(criterion)])
-
-
 def f_vth_bridge(eng_start, eng_end, de, emission_measure, plasma_temperature, relative_abundance):
     '''
     NB: energies are in keV

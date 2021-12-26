@@ -6,10 +6,9 @@ from HafxSimulationContainer import HafxSimulationContainer
 import HafxStack
 
 ENG_LOWER_BOUND = 1
-ENG_UPPER_BOUND = 300
-opt_dir = 'optimized-7-aug-2021'
+ENG_UPPER_BOUND = 100
+opt_dir = 'optimized-2021-dec-24'
 filez = os.listdir(opt_dir)
-filez.sort(key=lambda x: x.split('_')[-3])
 
 base = "{:<30} " * 4
 
@@ -21,7 +20,7 @@ for f in filez:
     cur_con = HafxSimulationContainer.from_saved_file(os.path.join(opt_dir, f))
     # energies
     en = cur_con.flare_spectrum.energies
-    cur_con.simulate()
+    # cur_con.simulate()
     # attenuated flare spectrum
     att = np.matmul(cur_con.matrices[cur_con.KDISPERSED_RESPONSE], cur_con.flare_spectrum.flare)
 
