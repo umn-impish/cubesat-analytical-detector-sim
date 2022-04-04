@@ -4,6 +4,8 @@ import numpy as np
 import sunxspex.thermal as thermal
 
 GOES_PREFIX = {
+    'A': 1e-8,
+    'B': 1e-7,
     'C': 1e-6,
     'M': 1e-5,
     'X': 1e-4

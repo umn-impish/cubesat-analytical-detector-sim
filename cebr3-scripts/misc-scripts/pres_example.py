@@ -1,11 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import sys; sys.path.append('../..')
 
-from sim_src.AttenuationData import AttenuationType
-from sim_src.FlareSpectrum import FlareSpectrum
-from HafxStack import HAFX_MATERIAL_ORDER
-from HafxSimulationContainer import HafxSimulationContainer
+
+from adetsim.sim_src.AttenuationData import AttenuationType
+from adetsim.sim_src.FlareSpectrum import FlareSpectrum
+from adetsim.hafx_src.HafxStack import HAFX_MATERIAL_ORDER
+from adetsim.hafx_src.HafxSimulationContainer import HafxSimulationContainer
 
 
 def load_example(remake: bool) -> HafxSimulationContainer:
@@ -34,8 +36,9 @@ def load_example(remake: bool) -> HafxSimulationContainer:
     con.save_to_file(prefix=base_fn)
     return con
 
+
 #container = load_example(True)
-target_dir = 'optimized-16-nov-2021'
+target_dir = 'optimized-2021-dec-24'
 opt_fn = next(fn for fn in os.listdir(target_dir) if 'M5' in fn)
 container = HafxSimulationContainer.from_saved_file(os.path.join(target_dir, opt_fn))
 

@@ -1,10 +1,10 @@
+import sys; sys.path.append('../..')
 import os
 import numpy as np
-# from scipy.integrate import simpson
 
-from HafxSimulationContainer import HafxSimulationContainer
-import HafxStack
-from sim_src.FlareSpectrum import FlareSpectrum
+from adetsim.hafx_src.HafxSimulationContainer import HafxSimulationContainer
+import adetsim.hafx_src.HafxStack as HafxStack
+from adetsim.sim_src.FlareSpectrum import FlareSpectrum
 
 
 def battaglia_iter(goes_classes: str):
@@ -86,11 +86,15 @@ def find_appropriate_counts(class_thick, target_cps):
 if __name__ == '__main__':
     # need to be greater than necessary (loop starts by decr. thickness)
     class_thickness = {
-            'C1': 0.1,
+            'B5': 1e-2,
             'C5': 0.1,
-            'M1': 0.1,
             'M5': 0.1,
             'X1': 0.1
+            # 'C1': 0.1,
+            # 'C5': 0.1,
+            # 'M1': 0.1,
+            # 'M5': 0.1,
+            # 'X1': 0.1
         }
     target_cps = -np.log(0.95) / HafxStack.HAFX_DEAD_TIME
     find_appropriate_counts(class_thickness, target_cps)

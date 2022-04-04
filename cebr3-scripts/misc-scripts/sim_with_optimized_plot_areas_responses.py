@@ -8,16 +8,17 @@ import sim_src.impress_constants as ic
 
 try:
     import traceback
-    plt.style.use('/Users/sette/agu.mplstyle')
+    plt.style.use('/Users/settwi/grad_school/glesener/agu-2021/agu.mplstyle')
 except Exception as e:
     traceback.print_exc()
     input("any key to continue")
     raise
 
 fig_dir = 'figures'
-optim_dir = 'optimized-30-nov-2021'
+optim_dir = 'optimized-2021-dec-24'
 files = os.listdir(optim_dir)
 chosen_ones = ('C1', 'M1', 'M5', 'X1')
+
 
 DEFAULT_THRESH_COUNTS = -1 * np.log(0.95) / HAFX_DEAD_TIME
 def plot_effective_areas(ax, sim_cons, cur_flare, include_legend=True, thresh_counts=DEFAULT_THRESH_COUNTS):
@@ -44,6 +45,7 @@ def plot_effective_areas(ax, sim_cons, cur_flare, include_legend=True, thresh_co
         kwargz['label'] = f"{sc.goes_class} detector eff. area"
         ax.plot(cur_flare.energies, a, **kwargz)
         if include_legend: ax.legend()
+
 
 def plot_responses(ax, sim_cons, cur_flare):
     ax.set_ylim(1e-4, 1e9)
@@ -107,7 +109,7 @@ def agu():
     for n, fig in tosave.items():
         # fig.set_size_inches(8, 6)
         fig.tight_layout()
-        fig.savefig(os.path.join(fig_dir, f'{n}-smol-boi.png'))
+        fig.savefig(os.path.join(fig_dir, f'{n}-smol-boi.pdf'))
 
 
 if __name__ == '__main__':

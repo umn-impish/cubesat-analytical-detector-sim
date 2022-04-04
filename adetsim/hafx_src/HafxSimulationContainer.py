@@ -2,8 +2,8 @@ import inspect
 import numpy as np
 import os
 
-from sim_src.FlareSpectrum import FlareSpectrum
-from HafxStack import HafxStack, SINGLE_DET_AREA
+from ..sim_src.FlareSpectrum import FlareSpectrum
+from ..hafx_src.HafxStack import HafxStack, SINGLE_DET_AREA
 
 class HafxSimulationContainer:
     MIN_ENG = 1.0               # keV
@@ -28,6 +28,11 @@ class HafxSimulationContainer:
     MATRIX_KEYS = (KDISPERSED_RESPONSE, KPURE_RESPONSE)
 
     DEFAULT_SAVE_DIR = 'responses-and-areas'
+
+    @classmethod
+    def from_file(cls, filename:str, remake_spectrum=False):
+        ''' alias '''
+        return cls.from_saved_file(filename, remake_spectrum=remake_spectrum)
 
     @classmethod
     def from_saved_file(cls, filename: str, remake_spectrum=False):

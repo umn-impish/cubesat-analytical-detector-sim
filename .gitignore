@@ -12,3 +12,5 @@ __pycache__
 responses-and-areas
 figures
 william_spectra.py
+*-optimized-*
+*.xz
