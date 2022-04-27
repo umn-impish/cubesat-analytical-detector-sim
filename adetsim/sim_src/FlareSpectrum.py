@@ -11,27 +11,29 @@ GOES_PREFIX = {
     'X': 1e-4
 }
 
+BATTAGLIA_BREAK_ENERGY = 0 #10
 
 def goes_class_lookup(flare_specifier: str) -> np.float64:
     ch, mul = flare_specifier[0].upper(), float(flare_specifier[1:])
     return GOES_PREFIX[ch] * mul
 
 
-def battaglia_power_law_with_pivot(eng_ary, reference_flux, spectral_index, e_pivot):
-    # same code as f_1pow
-    # just a power law at some reference energy
-
     # update 16 september 2021: Ethan's code was not consistent with Battaglia model.
     # updated to have spectral index of 1.5 for E < 50 keV
     # assume energyunits are keV
     # update 30 nov 2021: setting break energy to 10 keV just for the hell of it
-    BREAK_ENG = 10
+def battaglia_power_law_with_pivot(eng_ary, reference_flux, spectral_index, e_pivot, break_energy=BATTAGLIA_BREAK_ENERGY):
+    # same code as f_1pow
+    # just a power law at some reference energy
 
-    criterion = eng_ary <= BREAK_ENG
+    criterion = eng_ary <= break_energy
     above_break = reference_flux * ((e_pivot / eng_ary) ** spectral_index)
 
-    below_ref = above_break[criterion][-1]
-    below_break = below_ref * ((BREAK_ENG / eng_ary) ** 1.5)
+    try:
+        below_ref = above_break[criterion][-1]
+        below_break = below_ref * ((break_energy / eng_ary) ** 1.5)
+    except IndexError:
+        return above_break
 
     return np.append(below_break[criterion], above_break[np.logical_not(criterion)])
 
@@ -40,9 +42,9 @@ class BattagliaParameters:
     # see Battaglia et al., https://arxiv.org/abs/astro-ph/0505154v1
     # equations: 11, 12, 8
     def __init__(self, goes_flux):
-        pt_p1 = np.log(goes_flux)/np.log(10)
-        pt_p2 = np.log(3.5) / np.log(10) - 12
-        self.plasma_temp = (1 / 0.33) * (pt_p1 - pt_p2)                         # MK
+        pt_p1 = np.log(goes_flux)/np.log(10)                                    # MK
+        pt_p2 = 12 - np.log(3.5) / np.log(10)                                   # MK
+        self.plasma_temp = (1 / 0.33) * (pt_p1 + pt_p2)                         # MK
 
         self.emission_measure = (goes_flux / 3.6 * 1e50) ** (1/0.92)            # particles^2 / cm3
         self.reference_energy = 35.0                                            # keV
@@ -61,14 +63,14 @@ class BattagliaParameters:
         '''
         pt = self.plasma_temp * K_B * 1e6
         em = self.emission_measure / 1e49
-        return (pt, em)
+        return {'pt': pt, 'em': em}
 
 
 class FlareSpectrum:
     _ENERGY_LIMITS = (1.001, 200.15)
     @classmethod
     def make_with_battaglia_scaling(cls, goes_class: str, start_energy: np.float64,
-                                    end_energy: np.float64, de: np.float64, rel_abun=1.0):
+                                    end_energy: np.float64, de: np.float64, rel_abun=1.0, break_energy=BATTAGLIA_BREAK_ENERGY):
         ''' goes flux in W/m2, energies in keV '''
         bp = BattagliaParameters(goes_class_lookup(goes_class))
 
@@ -92,24 +94,27 @@ class FlareSpectrum:
         thermal_spec = np.append(thermal_spec, np.zeros(energy_centers.size - thermal_spec.size))
 
         nonthermal_spec = battaglia_power_law_with_pivot(
-                energy_centers, bp.reference_flux, bp.spectral_index, bp.reference_energy)    # photon / (s cm2 keV)
+            energy_centers, bp.reference_flux, bp.spectral_index,
+            bp.reference_energy, break_energy=break_energy)    # photon / (s cm2 keV)
 
-        return cls(goes_class, energy_centers, thermal_spec, nonthermal_spec)
-
-    @classmethod
-    def dummy(cls, energies: np.ndarray):
-        ''' empty spectrum with only energies '''
-        return cls('', energies, np.zeros(energies.size), np.zeros(energies.size))
+        return cls(goes_class, energy_centers, thermal_spec, nonthermal_spec, energy_edges=edges)
 
     def __init__(self, goes_class: str, energies: np.ndarray,
-                 thermal: np.ndarray, nonthermal: np.ndarray):
+                 thermal: np.ndarray, nonthermal: np.ndarray,
+                 energy_edges: np.ndarray=None):
         self.goes_class = goes_class
         self.energies = energies
+        self.energy_edges = energy_edges
         self.thermal, self.nonthermal = thermal, nonthermal
 
     @property
     def goes_flux(self) -> np.float64:
         return goes_class_lookup(self.goes_class)
+
+    # @property
+    # def energy_edges(self) -> np.ndarray:
+    #     de = self.energies[1] - self.energies[0]
+    #     return np.arange(self.energies[0] - de, self.energies[-1] + de, step=de)
 
     @property
     def flare(self) -> np.ndarray:
@@ -118,3 +123,11 @@ class FlareSpectrum:
         except ValueError:
             print(f"thermal: {self.thermal.size}\tnonthermal: {self.nonthermal.size}")
             raise
+
+    def __repr__(self):
+        ret = '[FlareSpectrum: '
+        de = np.diff(self.energies)[0]
+        ret += f'energy=(start={self.energies[0]:.2f}, stop={self.energies[-1]:.2f}, de={de:.2f}), '
+        ret += f'goes_class={self.goes_class}, '
+
+        return ret

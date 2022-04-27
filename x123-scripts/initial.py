@@ -8,42 +8,11 @@ import sys; sys.path.append('..')
 from adetsim.hafx_src import X123Stack
 from adetsim.sim_src import FlareSpectrum
 
+raise ImportError("Import the x123 data loading thing from another file")
+
 def main():
     data = x123_data('C5')
     plot_effective_area(data)
-
-def x123_data(goes_class):
-    save_fn = f'{goes_class}-x123-resp-saved.xz'
-    if os.path.exists(save_fn) and goes_class in save_fn:
-        print('load pickle')
-        with lzma.open(save_fn, 'rb') as f:
-            dat = pickle.load(f)
-    else:
-        print('make from scratch')
-        dat = dict()
-        fs = FlareSpectrum.FlareSpectrum.make_with_battaglia_scaling(
-            goes_class=goes_class, start_energy=1.1, end_energy=400, de=0.1)
-        dat['energies'] = fs.energies
-        dat['flare'] = fs.flare
-        print('done flare spectrum')
-
-        xs = X123Stack.X123Stack()
-        dat['area'] = xs.area
-        dat['disp_resp'] = (disp_resp := xs.generate_detector_response_to(fs, disperse_energy=True))
-        print('done dispersed')
-        dat['undisp_resp'] = (undisp_resp := xs.generate_detector_response_to(fs, disperse_energy=False))
-        print('done undispersed')
-
-        dat['disp'] = disp_resp @ fs.flare
-        print('done disp multiply')
-        dat['undisp'] = undisp_resp @ fs.flare
-        print('done undisp multiply')
-
-        with lzma.open(save_fn, 'wb') as f:
-            pickle.dump(dat, f)
-        print('done pickle')
-
-    return dat
 
 def plot_effective_area(dat):
     print('area is', dat['area'])

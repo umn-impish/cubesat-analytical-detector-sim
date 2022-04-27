@@ -1,36 +1,47 @@
 import numpy as np
-
 from ..sim_src.AttenuationData import AttenuationType, AttenuationData
 from ..sim_src.DetectorStack import DetectorStack
 from ..sim_src.FlareSpectrum import FlareSpectrum
 from ..sim_src.Material import Material
 
 from . import HafxMaterialProperties as hmp
-from .FixedEnergyResolutionDetector import FixedEnergyResolutionDetector
+from .LinearInterpolateDisperseDetector import LinearInterpolateDisperseDetector
+from .X123Stack import X123Stack
 
+class X123CdTeStack(DetectorStack):
+    X123_DIAMETER = X123Stack.X123_DIAMETER # cm
+    DET_THICK = 1e-3 * hmp.METER_PER_CM     # cm
+    BE_THICK = 100e-6 * hmp.METER_PER_CM    # cm
 
-class X123Stack(DetectorStack):
-    ''' material stack for X-123 detector from AmpTek '''
-    X123_DIAMETER = 2.82 * 2 / 10          # cm
-    DET_THICK = 500e-6 * hmp.METER_PER_CM  # cm
-    BE_THICK = 8e-6 * hmp.METER_PER_CM     # cm
-    def __init__(self, det_thick: float=DET_THICK):
+    E1 = 14.4       # keV
+    E2 = 122        # keV
+    FW1 = 530/1000  # keV
+    FW2 = 850/1000  # keV
+    def __init__(self, **kwargs):
         materials = [
             Material(
                 diameter=self.X123_DIAMETER,
                 attenuation_thickness=self.BE_THICK,
                 mass_density=hmp.DENSITIES[hmp.BE],
-                attenuation_data=AttenuationData.from_nist_file(hmp.ATTEN_FILES[hmp.BE]))]
+                attenuation_data=AttenuationData.from_nist_file(hmp.ATTEN_FILES[hmp.BE])
+            )
+        ]
         self.detector_volume = Material(
             diameter=self.X123_DIAMETER,
-            attenuation_thickness=det_thick,
-            mass_density=hmp.DENSITIES[hmp.SI],
-            attenuation_data=AttenuationData.from_nist_file(hmp.ATTEN_FILES[hmp.SI]))
-        super().__init__(materials, FixedEnergyResolutionDetector())
+            attenuation_thickness=self.DET_THICK,
+            mass_density=hmp.DENSITIES[hmp.CDTE],
+            attenuation_data=AttenuationData.from_nist_file(hmp.ATTEN_FILES[hmp.CDTE])
+        )
+        super().__init__(
+            materials,
+            LinearInterpolateDisperseDetector(
+                e1=self.E1, e2=self.E2,
+                fwhm1=self.FW1/self.E1,
+                fwhm2=self.FW2/self.E2))
 
     def generate_detector_response_to(
             self, spectrum: FlareSpectrum, disperse_energy: bool,
-            chosen_attenuations: tuple=AttenuationType.ALL) -> np.ndarray:
+            chosen_attenuations: list=AttenuationType.ALL) -> np.ndarray:
         prelim_resp = self._generate_material_response_due_to(spectrum, chosen_attenuations)
         abzorbed = np.eye(spectrum.energies.size) -\
             self.detector_volume.generate_overall_response_matrix_given(

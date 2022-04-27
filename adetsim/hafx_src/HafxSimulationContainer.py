@@ -103,19 +103,20 @@ class HafxSimulationContainer:
         att_area = np.matmul(self.matrices[self.KPURE_RESPONSE], area_vector)
         return att_area
 
-    def simulate(self):
+    def simulate(self, other_spectrum: FlareSpectrum=None):
+        fs = other_spectrum or self.flare_spectrum
         if self.al_thick is None:
             raise ValueError("Aluminum thickness has not been set.")
         # get the un-dispersed (pure) response matrix
         self.matrices[self.KPURE_RESPONSE] =\
                 self \
                 .detector_stack \
-                .generate_detector_response_to(self.flare_spectrum, False) \
+                .generate_detector_response_to(fs, False) \
         # apply CeBr3 energy resolution
         self.matrices[self.KDISPERSED_RESPONSE] =\
                 self \
                 .detector_stack \
-                .apply_detector_dispersion_for(self.flare_spectrum, self.matrices[self.KPURE_RESPONSE])
+                .apply_detector_dispersion_for(fs, self.matrices[self.KPURE_RESPONSE])
 
     def gen_file_name(self, prefix):
         gc = self.flare_spectrum.goes_class
