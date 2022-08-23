@@ -37,7 +37,7 @@ class HafxSimulationContainer:
     @classmethod
     def from_saved_file(cls, filename: str, remake_spectrum=False):
         ''' load the container from a (compressed) .npz file '''
-        data = np.load(filename)
+        data = np.load(filename, allow_pickle=True)
         try:
             goes_class = str(data[cls.KGOES_CLASS])
         except KeyError as e:
@@ -54,10 +54,10 @@ class HafxSimulationContainer:
 
         else:
             fs = FlareSpectrum(
-                goes_class,
-                data[cls.KENERGY_EDGES],
-                data[cls.KFLARE_THERMAL],
-                data[cls.KFLARE_NONTHERMAL]
+                goes_class=goes_class,
+                thermal=data[cls.KFLARE_THERMAL],
+                nonthermal=data[cls.KFLARE_NONTHERMAL],
+                energy_edges=data[cls.KENERGY_EDGES]
             )
 
         ret = cls(aluminum_thickness=data[cls.KAL_THICKNESS], flare_spectrum=fs)

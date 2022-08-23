@@ -119,9 +119,9 @@ class FlareSpectrum:
 
         edges = energy_edges
 
-        over_cnd = edges >= FlareSpectrum._ENERGY_LIMITS[0]
-        under_cnd = edges <= FlareSpectrum._ENERGY_LIMITS[1]
-        thermal_edges = edges[under_cnd & over_cnd]
+        over_cnd = edges > FlareSpectrum._ENERGY_LIMITS[0]
+        under_cnd = edges < FlareSpectrum._ENERGY_LIMITS[1]
+        thermal_edges = edges[over_cnd & under_cnd]
 
         thermal_spec = thermal.thermal_emission(
             thermal_edges * u.keV, bp.plasma_temp * u.MK,
@@ -129,7 +129,9 @@ class FlareSpectrum:
         ).value
 
         # make thermal/nonthermal spectra the same size
-        under_pad, over_pad = np.zeros(np.sum(~over_cnd)), np.zeros(np.sum(~under_cnd))
+        verify = lambda n: n if n > 0 else 0
+        under_elts, over_elts = np.sum(~over_cnd), np.sum(~under_cnd)
+        under_pad, over_pad = np.zeros(verify(under_elts)), np.zeros(verify(over_elts))
         thermal_spec = np.concatenate(
             (
                 under_pad,
@@ -154,9 +156,10 @@ class FlareSpectrum:
             thermal=thermal_spec,
             nonthermal=nonthermal_spec)
 
-    def __init__(self, goes_class: str,
+    def __init__(self,
+                 goes_class: str,
                  thermal: np.ndarray, nonthermal: np.ndarray,
-                 energy_edges: np.ndarray=None):
+                 energy_edges: np.ndarray):
         self.goes_class = goes_class
         self.energy_edges = energy_edges
         self.thermal, self.nonthermal = thermal, nonthermal
