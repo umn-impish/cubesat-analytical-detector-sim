@@ -1,8 +1,10 @@
 import numpy as np
 import os
 import scipy.integrate
-from HafxSimulationContainer import HafxSimulationContainer
-from HafxStack import SINGLE_DET_AREA
+from adetsim.hafx_src.HafxSimulationContainer import HafxSimulationContainer
+from adetsim.hafx_src.HafxMaterialProperties import SINGLE_DET_AREA
+
+THRESHOLD_ENERGY = 10 # keV
 
 def pileup_fraction_estimate(count_rate, pileup_time):
     # waiting time probability density function
@@ -11,8 +13,8 @@ def pileup_fraction_estimate(count_rate, pileup_time):
     # integrate probability density function from 0 to the pileup time
     return scipy.integrate.quad(pdf, 0, pileup_time)
 
-optim_dir = 'optimized-10-aug-2021'
-pileup_time = 0.75 * 1e-6       # microsecond
+optim_dir = '../responses-and-areas/optimized-2022-aug-22-bins'
+pileup_time = 1 * 1e-6       # microsecond
 opt_files = os.listdir(optim_dir)
 
 loaded = dict()
@@ -25,14 +27,16 @@ cols = ("Flare size", "Attenuator thickness (um)", "Pileup fraction estimate", "
 col_str = ("{:<30}" * len(cols)).format(*cols)
 print(col_str)
 for k in keyz:
-    # doesn't matter if we use the energy-dispersed matrix or not
-    # total counts are conserved
-    threshold_energy = HafxSimulationContainer.MIN_THRESHOLD_ENG
-    cur_con = loaded[k]
-    disp_flare = np.matmul(cur_con.matrices[cur_con.KPURE_RESPONSE], cur_con.flare_spectrum.flare)
-    eng = cur_con.flare_spectrum.energies
-    count_rate = scipy.integrate.simpson(
-            disp_flare[eng >= threshold_energy], x=eng[eng >= threshold_energy]) * SINGLE_DET_AREA
+    try: cur_con = loaded[k]
+    except KeyError: continue
+
+    threshold_energy = THRESHOLD_ENERGY
+    eng = cur_con.flare_spectrum.energy_edges
+    condition = (eng >= threshold_energy)[:-1]
+
+    disp_flare = cur_con.matrices[cur_con.KDISPERSED_RESPONSE] @ cur_con.flare_spectrum.flare
+    count_rate = (disp_flare * np.diff(eng))[condition].sum() * SINGLE_DET_AREA
+
     frac, err = pileup_fraction_estimate(count_rate, pileup_time)
     err_str = f"({(err * 100):.2e})%"
     print(f"{k:<30}{cur_con.al_thick*1e4:<30.1f}{frac:<30.2%}+-{err_str:<30}")
