@@ -19,6 +19,8 @@ cebr3-scripts/misc-scripts/*lzma
 cebr3-scripts/misc-scripts/*xz
 cdfs
 responses
+flare-data
+rebinned-srms
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
