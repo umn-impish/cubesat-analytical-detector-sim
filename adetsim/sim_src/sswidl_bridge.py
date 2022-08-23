@@ -82,30 +82,3 @@ def loud_print(*args, **kwargs):
 
 def clean_table_output(res):
     return np.array([float(y) for x in res for y in x.strip().split()], dtype=np.float64)
-
-
-if __name__ == '__main__':
-    from FlareSpectrum import BattagliaParameters
-    vth_name = "f_vth_bridge"
-    pow_name = "f_1pow_bridge"
-    K_B = 8.627e-8          # keV/K
-    ENG_START = 1.0         # keV
-    ENG_END = 300.0         # keV
-    DE = 0.1                # keV
-    goes_intensity = 1e-5   # W / m2
-
-    bp = BattagliaParameters(goes_intensity)
-    energy_vec = np.arange(ENG_START, ENG_END + DE, DE, dtype=np.float64)
-    print(energy_vec)
-
-    # just a power law
-    nonthermal = power_law_with_pivot(energy_vec, bp.flux_35kev, bp.spectral_index, 35.0)
-    pt, em = bp.gen_vth_params()
-    #           eng_start, eng_end, de,  emission_measure, plasma_temp, relative_abundance
-    vth_args = [ENG_START, ENG_END, 0.1, em,               pt,          1.0]
-    print(vth_args)
-    vth_res = run_sswidl_script(vth_name, *vth_args)
-    thermal = clean_table_output(vth_res)
-
-    total_spectrum = nonthermal + thermal
-    np.savetxt('spectrum.tab', np.transpose((energy_vec, total_spectrum)), delimiter='\t')

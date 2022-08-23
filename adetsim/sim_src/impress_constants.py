@@ -1,6 +1,3 @@
-import os
-import numpy as np
-
 '''
 a whole bunch of constants
 not anymore... like a cleaned-out office lol

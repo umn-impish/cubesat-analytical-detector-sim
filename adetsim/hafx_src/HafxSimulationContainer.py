@@ -1,9 +1,9 @@
-import inspect
 import numpy as np
 import os
 
 from ..sim_src.FlareSpectrum import FlareSpectrum
-from ..hafx_src.HafxStack import HafxStack, SINGLE_DET_AREA
+from .HafxStack import HafxStack
+from .HafxMaterialProperties import SINGLE_DET_AREA
 
 class HafxSimulationContainer:
     MIN_ENG = 1.0               # keV
@@ -19,7 +19,7 @@ class HafxSimulationContainer:
     KMAXE = 'max_e'
     KDE = 'de'
 
-    KENERGIES = 'energies'
+    KENERGY_EDGES = 'energy_edges'
     KFLARE_THERMAL = 'thermal'
     KFLARE_NONTHERMAL = 'nonthermal'
 
@@ -46,16 +46,19 @@ class HafxSimulationContainer:
             goes_class = filename.split('_')[-3]
 
         if remake_spectrum:
-            e = data[cls.KENERGIES]
+            edges = data[cls.KENERGY_EDGES]
             fs = FlareSpectrum.make_with_battaglia_scaling(
-                goes_class, min(e), max(e), e[1] - e[0])
+                goes_class=goes_class,
+                energy_edges=edges
+            )
 
         else:
             fs = FlareSpectrum(
                 goes_class,
-                data[cls.KENERGIES],
+                data[cls.KENERGY_EDGES],
                 data[cls.KFLARE_THERMAL],
-                data[cls.KFLARE_NONTHERMAL])
+                data[cls.KFLARE_NONTHERMAL]
+            )
 
         ret = cls(aluminum_thickness=data[cls.KAL_THICKNESS], flare_spectrum=fs)
         for k in cls.MATRIX_KEYS:
@@ -85,22 +88,22 @@ class HafxSimulationContainer:
         fspec_of_interest = different_flare or self.flare_spectrum
         if cps_threshold > 0:
             restrict = np.logical_and(
-                    fspec_of_interest.energies >= self.MIN_THRESHOLD_ENG,
-                    fspec_of_interest.energies <= self.MAX_THRESHOLD_ENG)
+                    fspec_of_interest.energy_edges >= self.MIN_THRESHOLD_ENG,
+                    fspec_of_interest.energy_edges <= self.MAX_THRESHOLD_ENG)
             try:
                 dispersed_flare = np.matmul(self.matrices[self.KDISPERSED_RESPONSE], fspec_of_interest.flare)
             except ValueError:
                 print(self.matrices[self.KDISPERSED_RESPONSE])
                 raise
-            relevant_cps = np.trapz(
-                dispersed_flare[restrict] * SINGLE_DET_AREA, x=fspec_of_interest.energies[restrict])
+            bin_widths = np.diff(fspec_of_interest.energy_edges[restrict])
+            relevant_cps = np.sum(dispersed_flare[restrict[:-1]] * SINGLE_DET_AREA * bin_widths)
 
             # "set" effective area to zero if we get more than the threshold counts
             if relevant_cps > cps_threshold:
-                return np.zeros_like(fspec_of_interest.energies)
+                return np.zeros(fspec_of_interest.energy_edges.size - 1)
 
-        area_vector = np.ones_like(fspec_of_interest.energies) * SINGLE_DET_AREA
-        att_area = np.matmul(self.matrices[self.KPURE_RESPONSE], area_vector)
+        area_vector = np.ones_like(fspec_of_interest.flare) * SINGLE_DET_AREA
+        att_area = self.matrices[self.KPURE_RESPONSE] @ area_vector
         return att_area
 
     def simulate(self, other_spectrum: FlareSpectrum=None):
@@ -123,9 +126,9 @@ class HafxSimulationContainer:
         return f"{prefix or 'no_prefix'}_{gc or 'no_goes'}_{self.al_thick:.3e}cm_hafx"
 
     def save_to_file(self, out_dir=DEFAULT_SAVE_DIR, prefix=None):
+        ''' save object data into a file that can be loaded back in later '''
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
-        ''' save object data into a file that can be loaded back in later '''
         if None in self.matrices:
             raise ValueError("Matrices haven't been computed so we can't save them.")
         if self.flare_spectrum is None:
@@ -137,7 +140,7 @@ class HafxSimulationContainer:
 
         to_save[self.KFLARE_THERMAL] = self.flare_spectrum.thermal
         to_save[self.KFLARE_NONTHERMAL] = self.flare_spectrum.nonthermal
-        to_save[self.KENERGIES] = self.flare_spectrum.energies
+        to_save[self.KENERGY_EDGES] = self.flare_spectrum.energy_edges
 
         for k in self.MATRIX_KEYS:
             to_save[k] = self.matrices[k]

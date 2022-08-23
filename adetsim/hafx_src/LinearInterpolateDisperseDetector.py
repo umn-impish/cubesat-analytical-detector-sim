@@ -4,21 +4,29 @@ from ..sim_src.FlareSpectrum import FlareSpectrum
 
 class LinearInterpolateDisperseDetector(PhotonDetector):
     def __init__(self, e1, e2, fwhm1, fwhm2):
+        self.min_fwhm = min(fwhm1, fwhm2)
         self.slope = (fwhm2 - fwhm1) / (e2 - e1)
         self.intercept = fwhm1 - self.slope*e1
         super().__init__()
 
     def interpolate_energy_resolution(self, energies: np.ndarray) -> np.ndarray:
-        ''' put a line through two points that we know (667 from Epic Crystal, 20 keV from a meeting with John) '''
-        return (self.slope*energies + self.intercept)
+        ''' put a line through two points that we know '''
+        ret = self.slope*energies + self.intercept
+        # prevent negative resolutions by making the minimum-achieved resolution
+        # the smallest possible
+        if np.any(ret < 0):
+            ret[ret < 0] = ret[ret > 0].min()
+            print('asdf')
+        return ret
 
     def generate_energy_resolution_given(self, incident_spectrum: FlareSpectrum) -> np.ndarray:
-        step_size = incident_spectrum.energies[1] - incident_spectrum.energies[0]
-        resolutions = self.interpolate_energy_resolution(incident_spectrum.energies)
+        bin_widths = np.diff(incident_spectrum.energy_edges)
+        midpoints = incident_spectrum.energy_edges[:-1] + bin_widths/2
+        resolutions = self.interpolate_energy_resolution(midpoints)
         # convert the energy fwhm to "index" space
-        fwhm = resolutions * incident_spectrum.energies / step_size
+        fwhm = resolutions * midpoints / bin_widths
 
-        dim = incident_spectrum.energies.size
+        dim = incident_spectrum.energy_edges.size - 1
         rng = np.arange(dim)
         vectorized_indices = np.tile(rng, (dim, 1)).transpose()
         return gaussian_row(dim, fwhm, vectorized_indices)

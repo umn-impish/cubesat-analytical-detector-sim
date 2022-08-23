@@ -1,12 +1,13 @@
 import numpy as np
-import os
 
 from ..sim_src.AttenuationData import AttenuationData, AttenuationType
 from ..sim_src.DetectorStack import DetectorStack
 from ..sim_src.FlareSpectrum import FlareSpectrum
 from ..sim_src.Material import Material
 
-from .HafxMaterialProperties import *
+from .HafxMaterialProperties import \
+    HAFX_MATERIAL_ORDER, AL, THICKNESSES, \
+    DENSITIES, ATTEN_FILES, DIAMETER
 from .Sipm3000 import Sipm3000
 
 
@@ -18,7 +19,7 @@ def gen_materials(al_thick: np.float64):
         thick = al_thick if name == AL else THICKNESSES[name]
         rho = DENSITIES[name]
         atten_dat = AttenuationData.from_nist_file(ATTEN_FILES[name])
-        materials.append(Material(DIAMETER, thick, rho, atten_dat))
+        materials.append(Material(DIAMETER, thick, rho, atten_dat, name=name))
     return materials
 
 
@@ -37,13 +38,13 @@ class HafxStack(DetectorStack):
         if self.enable_scintillator:
             # now incorporate the scintillator
             absorbed = self.generate_scintillator_response(incident_spectrum, chosen_attenuations)
-            response = np.matmul(absorbed, response)
+            response = absorbed @ response
         return self._dispatch_dispersion(incident_spectrum, response, disperse_energy)
 
     def generate_scintillator_response(self, incident_spectrum: FlareSpectrum, chosen_attenuations: list) -> np.ndarray:
-        ident = np.identity(incident_spectrum.energies.size)
+        onez = np.ones(incident_spectrum.energy_edges.size - 1)
         # we must include photoelectric absorption as this mechanism leads to scintillation.
         abs_atts = list(set([AttenuationType.PHOTOELECTRIC_ABSORPTION] + chosen_attenuations))
         # XXX: only dimensions of incident_spectrum used in this call. confusing...
-        absorbed = ident - self.scintillator.generate_overall_response_matrix_given(incident_spectrum, abs_atts)
-        return absorbed
+        absorbed = onez - self.scintillator.generate_overall_response_matrix_given(incident_spectrum, abs_atts)
+        return np.diag(absorbed)

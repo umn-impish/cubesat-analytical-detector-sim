@@ -9,11 +9,12 @@ class FixedEnergyResolutionDetector(PhotonDetector.PhotonDetector):
     def __init__(self, eres=ERES):
         super().__init__()
 
-    def generate_energy_resolution_given(self, spectrum) -> np.ndarray:
-        de = spectrum.energies[1] - spectrum.energies[0]
-        fwhm = self.ERES * spectrum.energies / de
+    def generate_energy_resolution_given(self, spectrum: FlareSpectrum) -> np.ndarray:
+        de = np.diff(spectrum.energy_edges)
+        midpoints = spectrum.energy_edges[:-1] + de/2
+        fwhm = self.ERES * midpoints / de
 
-        dim = spectrum.energies.size
+        dim = spectrum.energy_edges.size - 1
         idxs = np.arange(dim)
         vec_idxs = np.tile(idxs, (dim, 1)).transpose()
 

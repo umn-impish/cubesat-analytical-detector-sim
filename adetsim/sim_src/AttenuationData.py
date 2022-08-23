@@ -31,17 +31,20 @@ class AttenuationData:
         self.attenuations[AttenuationType.RAYLEIGH] = rayleigh
         self.attenuations[AttenuationType.COMPTON] = compton
 
-    def interpolate_from(self, incident_flare: FlareSpectrum): # returns AttenuationData object
-        '''interpolate standard data to fit given incident_flare energy spectrum'''
-        # no data except energies
-        new_att = AttenuationData(incident_flare.energies, [], [], [])
+    def interpolate_from(self, incident_flare: FlareSpectrum) -> dict:
+        ''' interpolate standard data to fit given incident_flare energy spectrum
+            returns a function that interpolates log of attenuation
+            data (to be integrated or evaluated)
+        '''
+        interp_log_att_funcs = dict()
         for key, att in self.attenuations.items():
             # interpolate between NIST energies
             # we want straight-line interpolation on the log plot,
             # so take the log before doing any fitting
             loge, logat = np.log(self.energies), np.log(att)
-            interp_func = interpolate.interp1d(loge, logat, fill_value="extrapolate")
-            new_logat = interp_func(np.log(incident_flare.energies))
-            new_at = np.exp(new_logat)
-            new_att.attenuations[key] = new_at
-        return new_att
+            interp_func = interpolate.interp1d(
+                x=loge, y=logat,
+                fill_value="extrapolate"
+            )
+            interp_log_att_funcs[key] = interp_func
+        return interp_log_att_funcs
