@@ -1,3 +1,4 @@
+from typing import Tuple
 import astropy.units as u
 import functools
 import numpy as np
@@ -45,25 +46,33 @@ def broken_power_law_binned_flux(
     lower = energy_edges[cnd]
     upper = energy_edges[~cnd]
 
-    par_integ = functools.partial(
+    up_integ = functools.partial(
         power_law_integral,
         norm_energy=break_energy,
-        norm=norm)
+        norm=norm,
+        index=upper_index
+    )
+    low_integ = functools.partial(
+        power_law_integral,
+        norm_energy=break_energy,
+        norm=norm,
+        index=lower_index
+    )
 
-    lower_portion = par_integ(energy=lower[1:], index=lower_index)
-    lower_portion -= par_integ(energy=lower[:-1], index=lower_index)
+    lower_portion = low_integ(energy=lower[1:])
+    lower_portion -= low_integ(energy=lower[:-1])
 
-    upper_portion = par_integ(energy=upper[1:], index=upper_index)
-    upper_portion -= par_integ(energy=upper[:-1], index=upper_index)
+    upper_portion = up_integ(energy=upper[1:])
+    upper_portion -= up_integ(energy=upper[:-1])
 
     twixt_portion = []
     # bin between the portions is comprised of both power laws
     if lower.size > 0:
         twixt_portion = np.diff(
-            par_integ(energy=np.array([break_energy, upper[0]]), index=upper_index)
+            low_integ(energy=np.array([break_energy, upper[0]]))
         )
         twixt_portion += np.diff(
-            par_integ(energy=np.array([lower[-1], break_energy]), index=upper_index)
+            up_integ(energy=np.array([lower[-1], break_energy]))
         )
 
     ret = np.concatenate((lower_portion, twixt_portion, upper_portion))
@@ -90,7 +99,7 @@ class BattagliaParameters:
         else:
             self.spectral_index = 3.60 * self.reference_flux**(-0.16)           # unitless
 
-    def gen_vth_params(self) -> (float, float):
+    def gen_vth_params(self) -> Tuple[float, float]:
         K_B = 8.627e-8  # keV/K
         '''
         generate plasma temperature, emission measure in units appropriate for idl function f_vth.
