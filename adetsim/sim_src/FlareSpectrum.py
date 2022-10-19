@@ -67,7 +67,7 @@ def broken_power_law_binned_flux(
 
     twixt_portion = []
     # bin between the portions is comprised of both power laws
-    if lower.size > 0:
+    if lower.size > 0 and upper.size > 0:
         twixt_portion = np.diff(
             low_integ(energy=np.array([break_energy, upper[0]]))
         )
