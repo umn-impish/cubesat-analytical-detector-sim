@@ -8,6 +8,15 @@ class AttenuationType:
     COMPTON = 3
     ALL = [PHOTOELECTRIC_ABSORPTION, RAYLEIGH, COMPTON]
 
+    @staticmethod
+    def named():
+        return {
+            k: n for (k, n) in zip(
+                AttenuationType.ALL,
+                ('photoelectric', 'rayleigh', 'compton')
+            )
+        }
+
 class AttenuationData:
     @classmethod
     def from_nist_file(cls, file_path: str):
