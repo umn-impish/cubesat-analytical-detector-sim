@@ -3,7 +3,9 @@ import numpy as np
 
 ''' clean the raw nist data and make it happy '''
 
-raw_data_dir = os.path.join('..', 'raw-nist-attenuations-1to300kev')
+raw_data_dir = 'nist'
+out_dir = 'cleaned'
+
 for fn in os.listdir(raw_data_dir):
     raw_fn = os.path.join(raw_data_dir, fn)
     if os.path.isfile(fn):
@@ -18,4 +20,4 @@ for fn in os.listdir(raw_data_dir):
             eng[i] += 1e-8
         last_e = eng[i]
     out = np.array([eng, phot, ray, com])
-    np.savetxt(fn, out.transpose())
+    np.savetxt(os.path.join(out_dir, fn), out.transpose())
