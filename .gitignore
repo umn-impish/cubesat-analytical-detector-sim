@@ -10,6 +10,7 @@ __pycache__
 *.npz
 *.log
 responses-and-areas
+responses*areas
 figures
 william_spectra.py
 *-optimized-*

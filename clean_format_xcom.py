@@ -1,10 +1,11 @@
-import os
 import numpy as np
+import os
+import sys
 
 ''' clean the raw nist data and make it happy '''
 
-raw_data_dir = 'nist'
-out_dir = 'cleaned'
+raw_data_dir = sys.argv[1]
+out_dir = sys.argv[2]
 
 for fn in os.listdir(raw_data_dir):
     raw_fn = os.path.join(raw_data_dir, fn)

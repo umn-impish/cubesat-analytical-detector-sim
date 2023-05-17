@@ -1,26 +1,18 @@
 import numpy as np
+import os
+import pickle
 
-from adetsim.hafx_src.HafxSimulationContainer import HafxSimulationContainer
+import adetsim.hafx_src.HafxMaterialProperties as hmp
 from adetsim.hafx_src.HafxMaterialProperties import HAFX_DEAD_TIME, SINGLE_DET_AREA
+from adetsim.sim_src.Material import Material
 from adetsim.sim_src.FlareSpectrum import FlareSpectrum
+from adetsim.hafx_src.HafxStack import HafxStack
+from adetsim.sim_src.AttenuationData import AttenuationData
 
-HSC = HafxSimulationContainer
-mine, maxe, de = HSC.MIN_ENG, HSC.MAX_ENG, HSC.DE
-MODEL_ENERGY_EDGES = np.arange(
-    HafxSimulationContainer.MIN_ENG,
-    HafxSimulationContainer.MAX_ENG + HafxSimulationContainer.DE,
-    step=HafxSimulationContainer.DE
-)
-
-def battaglia_iter(goes_classes: str):
-    for gc in goes_classes:
-        yield FlareSpectrum.make_with_battaglia_scaling(
-            goes_class=gc,
-            energy_edges=MODEL_ENERGY_EDGES
-        )
+MODEL_ENERGY_EDGES = np.arange(1.1, 300, 0.1)
 
 
-def count_edge(cts, target, step_sgn):
+def count_edge(cts: float, target: float, step_sgn: float):
     '''
     when we want to change something in the thickness-finding loop.
         with positive increment, cts < target, i.e. too much attenuation
@@ -31,74 +23,96 @@ def count_edge(cts, target, step_sgn):
     else: raise ValueError("step is indistinguishible from zero")
 
 
-def appr_count_step(sim_con, target_cps):
+def appr_count_step(det_stack, flare, target_cps):
     '''
     start with thickness that's sure to attenuate the flare
-    zigzag around target count rate until we're close enough for gov't work (below and within 5%)
+    zigzag around target count rate until we're close enough for gov't work (below and within 1%)
     '''
-    eng = sim_con.flare_spectrum.energy_edges
-    step = -sim_con.al_thick / 2
+    eng = flare.energy_edges
+    step = -det_stack.att_thick / 2
     divs = 0
     TOL = 0.01
     MAX_DIVS = 32
 
-    while divs < MAX_DIVS and sim_con.al_thick > (-1e-6):
-        print(f"{sim_con.flare_spectrum.goes_class}: {sim_con.al_thick:.4e} cm")
-        sim_con.simulate()
-        res = sim_con.matrices[sim_con.KDISPERSED_RESPONSE]
-        counts_per_kev = res @ sim_con.flare_spectrum.flare * SINGLE_DET_AREA
+    while divs < MAX_DIVS and det_stack.att_thick > (-1e-6):
+        print(f"{flare.goes_class}: {det_stack.att_thick:.4e} cm")
+        res = det_stack.generate_detector_response_to(flare, disperse_energy=True)
+        counts_per_kev = res @ flare.flare * SINGLE_DET_AREA
         cur_counts = np.sum(np.diff(eng) * counts_per_kev)
 
         print("Counts: ", cur_counts)
         if count_edge(cur_counts, target_cps, step):
-            print("Found the count edge.\n", f"Counts: {cur_counts}, thickness: {sim_con.al_thick:.4e} cm")
+            print("Found the count edge.\n", f"Counts: {cur_counts}, thickness: {det_stack.att_thick:.4e} cm")
             step /= -2
             divs += 1
 
-        sim_con.al_thick += step
+        det_stack.att_thick += step
         delta = 1 - cur_counts/target_cps
         if abs(delta) < TOL and delta > 0:
+            print('found good one!')
             break
 
     if divs == MAX_DIVS:
         print("** hit max number of step divisions.")
-    if sim_con.al_thick < 0:
+    if det_stack.att_thick < 0:
         print("** zero attenuator window thickness! uh oh")
     # go back a step and cut off precision at 1e-6 cm
-    clean_thick = sim_con.al_thick - step
+    clean_thick = det_stack.att_thick - step
     if clean_thick < 1e-6: clean_thick = 0
-    sim_con.al_thick = clean_thick
+    det_stack.att_thick = clean_thick
 
 
-def find_appropriate_counts(class_thick, target_cps):
-    ''' optimize attenuator window for target_cps given various GOES flare sizes '''
+def find_appropriate_counts(class_thick, target_cps, material_key):
+    ''' optimize attenuator window for target_cps given various GOES flare sizes
+        new 2023: change the filter material
+    '''
+    os.makedirs('responses-areas', exist_ok=True)
     for gc, thick in class_thick.items():
         fs = FlareSpectrum.make_with_battaglia_scaling(
             goes_class=gc,
             energy_edges=MODEL_ENERGY_EDGES
         )
-        sim_container = HafxSimulationContainer(
-            aluminum_thickness=thick,
-            flare_spectrum=fs)
+
+        stack = HafxStack(enable_scintillator=True, att_thick=thick)
+        mat = Material(
+            stack.materials[0].diameter, thick, hmp.DENSITIES[material_key],
+            AttenuationData.from_nist_file(hmp.ATTEN_FILES[material_key]),
+            material_key
+        )
+        # hot-swap the attenator
+        stack.materials[0] = mat
+
         # populates matrices of detector_stack
-        appr_count_step(sim_container, target_cps)
-        sim_container.save_to_file(prefix='optimized')
-        print(f"Saved {sim_container.gen_file_name('optimized')}.")
+        appr_count_step(stack, fs, target_cps)
+
+        thick = stack.materials[0].thickness
+        out_fn = f'responses-areas/optimized-{gc}-{thick:.3e}cm-hafx-{material_key}.pkl'
+        with open(out_fn, 'wb') as f:
+            pickle.dump(stack, f)
+        print(f"saved {out_fn}.")
 
 
 if __name__ == '__main__':
     # need to be greater than necessary (loop starts by decr. thickness)
     class_thickness = {
-            # 'B5': 1e-2,
-            # 'C5': 0.1,
-            # 'M5': 0.1,
-            # 'X1': 0.1
-            # 'C5': 0.1,
-            'C1': 1e-4,
-            'M1': 80e-4,
-            'M5': 250e-4,
-            'X1': 350e-4
-        }
+        'C1': 0.5,
+        'M1': 0.5,
+        'M5': 0.5,
+        'X1': 0.5,
+    }
 
-    target_cps = -np.log(0.95) / HAFX_DEAD_TIME
-    find_appropriate_counts(class_thickness, target_cps)
+    '''
+    here basically the tau variable he describes is equivalent to
+    the hold_off_time set in the Bridgeport detectors.
+    the shortest the hold_off_time can be is the integration_time.
+    the integration_time that MSU has been using is 48 clock cycles (1.2 us).
+    so the minimum dead time (what we want to be using for calculations here) is 1.2 us.
+    '''
+    bridgeport_measured_dead_time = 1.2e-6
+    target_pileup_prob = 0.05
+
+    # see Knoll ch 17 eq 17.7
+    target_cps = -np.log(1 - target_pileup_prob) / bridgeport_measured_dead_time
+    print(f'goal counts/sec: {target_cps:.2f}')
+    find_appropriate_counts(class_thickness, target_cps, 'Al')
+
