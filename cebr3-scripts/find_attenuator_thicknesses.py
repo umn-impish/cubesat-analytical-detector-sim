@@ -3,14 +3,13 @@ import os
 import pickle
 
 import adetsim.hafx_src.HafxMaterialProperties as hmp
-from adetsim.hafx_src.HafxMaterialProperties import HAFX_DEAD_TIME, SINGLE_DET_AREA
+from adetsim.hafx_src.HafxMaterialProperties import SINGLE_DET_AREA
 from adetsim.sim_src.Material import Material
 from adetsim.sim_src.FlareSpectrum import FlareSpectrum
 from adetsim.hafx_src.HafxStack import HafxStack
 from adetsim.sim_src.AttenuationData import AttenuationData
 
-MODEL_ENERGY_EDGES = np.arange(1.1, 300, 0.1)
-
+MODEL_ENERGY_EDGES = np.arange(10, 300, 0.1)
 
 def count_edge(cts: float, target: float, step_sgn: float):
     '''
@@ -108,6 +107,7 @@ if __name__ == '__main__':
     the integration_time that MSU has been using is 48 clock cycles (1.2 us).
     so the minimum dead time (what we want to be using for calculations here) is 1.2 us.
     '''
+
     bridgeport_measured_dead_time = 1.2e-6
     target_pileup_prob = 0.05
 
