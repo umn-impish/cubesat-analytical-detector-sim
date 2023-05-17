@@ -20,7 +20,9 @@ class X123Stack(DetectorStack):
                 diameter=self.X123_DIAMETER,
                 attenuation_thickness=self.BE_THICK,
                 mass_density=hmp.DENSITIES[hmp.BE],
-                attenuation_data=AttenuationData.from_nist_file(hmp.ATTEN_FILES[hmp.BE]))]
+                attenuation_data=AttenuationData.from_nist_file(hmp.ATTEN_FILES[hmp.BE]),
+                name='Be'
+            )]
         self.detector_volume = Material(
             diameter=self.X123_DIAMETER,
             attenuation_thickness=det_thick,

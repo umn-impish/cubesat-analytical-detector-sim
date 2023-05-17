@@ -2,6 +2,7 @@ import os
 
 ''' a bunch of constants '''
 AL = 'Al'
+AU = 'Au'
 TEF = 'Teflon'
 BE = 'Be'
 CEBR3 = 'CeBr3'
@@ -9,7 +10,7 @@ SI = 'Si'
 CDTE = 'CdTe'
 # order on HaFX detector
 HAFX_MATERIAL_ORDER = [AL, TEF, BE, CEBR3]
-HAFX_DEAD_TIME = 0.5e-6     # s
+HAFX_DEAD_TIME = 2e-6       # s
 
 '''
 NB: these all need to get re-verified. i just took them from Ethan's code.
@@ -27,7 +28,7 @@ THICKNESSES = {
 }
 
 ATTEN_DIR = 'all-attenuation-data/attenuation-data-files'
-ATTEN_BASENAMES = [AL, TEF, BE, CEBR3, SI, CDTE]
+ATTEN_BASENAMES = [AL, TEF, BE, CEBR3, SI, CDTE, AU]
 
 # attenuation data from:
 #   looked here for reference: https://www.nist.gov/pml/x-ray-mass-attenuation-coefficients
@@ -43,6 +44,7 @@ ATTEN_FILES = {
 # all g/cm3
 DENSITIES = {
     AL: 2.712,
+    AU: 19.3, # wowza
     BE: 1.850,
     TEF: 2.200,
     CEBR3: 5.1,
