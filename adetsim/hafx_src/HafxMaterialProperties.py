@@ -17,7 +17,7 @@ NB: these all need to get re-verified. i just took them from Ethan's code.
 update 24 sep 2021: updated to match Geant sims (teflon is like 10x thicker than I had. whoops)
 update 28 sep 2021: went back to old thickness; G4 thickness was ridiculous and overattenuating
 '''
-BE_THICKNESS = 0.07         # cm
+BE_THICKNESS = 0.075        # cm
 TEFLON_THICKNESS = 0.0127   # cm
 CEBR3_THICKNESS = 0.5       # cm
 THICKNESSES = {
