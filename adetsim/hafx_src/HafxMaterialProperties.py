@@ -8,6 +8,8 @@ BE = 'Be'
 CEBR3 = 'CeBr3'
 SI = 'Si'
 CDTE = 'CdTe'
+W = 'W'
+TI = 'Ti'
 # order on HaFX detector
 HAFX_MATERIAL_ORDER = [AL, TEF, BE, CEBR3]
 HAFX_DEAD_TIME = 2e-6       # s
@@ -28,7 +30,7 @@ THICKNESSES = {
 }
 
 ATTEN_DIR = 'all-attenuation-data/attenuation-data-files'
-ATTEN_BASENAMES = [AL, TEF, BE, CEBR3, SI, CDTE, AU]
+ATTEN_BASENAMES = [AL, TEF, BE, CEBR3, SI, CDTE, AU, W, TI]
 
 # attenuation data from:
 #   looked here for reference: https://www.nist.gov/pml/x-ray-mass-attenuation-coefficients
@@ -45,11 +47,13 @@ ATTEN_FILES = {
 DENSITIES = {
     AL: 2.712,
     AU: 19.3, # wowza
+    W: 19.3,  # also wowza
     BE: 1.850,
     TEF: 2.200,
     CEBR3: 5.1,
     SI: 2.33,
     CDTE: 5.85,
+    TI: 4.5
 }
 
 FULL_AREA = 43                                  # cm2 

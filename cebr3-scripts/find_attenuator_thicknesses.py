@@ -94,10 +94,10 @@ def find_appropriate_counts(class_thick, target_cps, material_key):
 if __name__ == '__main__':
     # need to be greater than necessary (loop starts by decr. thickness)
     class_thickness = {
-        'C1': 0.5,
-        'M1': 0.5,
-        'M5': 0.5,
-        'X1': 0.5,
+        'C1': 0.1,
+        'M1': 0.1,
+        'M5': 0.1,
+        'X1': 0.1,
     }
 
     '''
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     so the minimum dead time (what we want to be using for calculations here) is 1.2 us.
     '''
 
-    bridgeport_measured_dead_time = 1.2e-6
+    bridgeport_measured_dead_time = 1.5e-6
     target_pileup_prob = 0.05
 
     # see Knoll ch 17 eq 17.7

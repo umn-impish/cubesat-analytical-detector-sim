@@ -15,7 +15,7 @@ geom_area = ((40 * 40) << u.mm**2).to(u.cm**2)
 
 def main():
     res_fn = 'grips-responses.xz'
-    thks = (0, 0.1, 0.25, 0.5, 1)
+    thks = (0, 0.1, 0.25, 0.5, 1, 2, 3.3)
 
     if not os.path.exists(res_fn):
         responses = build_responses(res_fn, thks)
@@ -36,6 +36,7 @@ def build_responses(out_fn: str, pla_thicks: tuple[float]):
     for pt in pla_thicks:
         print('do', pt, 'mm')
         thicks = {
+            'Al': (50 << u.um).to(u.cm).value,
             'pla': (pt << u.mm).to(u.cm).value,
             'teflon': (0.5 << u.mm).to(u.cm).value,
             'gagg': (5 << u.mm).to(u.cm).value

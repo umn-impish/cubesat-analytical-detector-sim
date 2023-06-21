@@ -5,6 +5,7 @@ from adetsim.sim_src import DetectorStack as ds
 from adetsim.sim_src import FlareSpectrum as fs
 from adetsim.sim_src import Material as mat
 from adetsim.hafx_src import FixedEnergyResolutionDetector as ferd
+from adetsim.hafx_src import HafxMaterialProperties as hmp
 
 ATT_DIR = 'att-data/cleaned'
 att_concat = lambda s: f'{ATT_DIR}/{s}'
@@ -38,8 +39,8 @@ class GripsStack(ds.DetectorStack):
             kw = dict(
                 diameter=GripsStack.DIAMETER,
                 attenuation_thickness=t,
-                mass_density=MAT_DENS[n],
-                attenuation_data=MAT_DAT[n],
+                mass_density=MAT_DENS[n] if n in MAT_DENS else hmp.DENSITIES[n],
+                attenuation_data=MAT_DAT[n] if n in MAT_DAT else ad.AttenuationData.from_nist_file(hmp.ATTEN_FILES[n]),
                 name=n
             )
             if n not in det_mats:
