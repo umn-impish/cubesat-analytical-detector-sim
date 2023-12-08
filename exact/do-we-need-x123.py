@@ -7,7 +7,7 @@ import numpy as np
 from adetsim.hafx_src.X123Stack import X123Stack
 from adetsim.hafx_src.HafxStack import HafxStack
 import adetsim.sim_src.FlareSpectrum as fs
-from sunxspex.photon_power_law import broken_power_law_binned_flux as broken_power
+from sunkit_spex.photon_power_law import compute_broken_power_law as broken_power
 
 def main():
     sp = make_crab_xray_spectrum()
@@ -46,7 +46,7 @@ def compute_rates(rmats, spectrum):
 @progressor
 def make_responses(spec):
     xs = X123Stack(det_thick=(1 << u.mm).to(u.cm).value)
-    hs = HafxStack(al_thick=0)
+    hs = HafxStack(att_thick=0)
 
     return {
         'x123': {'area': xs.area, 'rmat': xs.generate_detector_response_to(spec, disperse_energy=False)},
@@ -67,8 +67,8 @@ def make_crab_xray_spectrum():
     energies = np.logspace(np.log10(a), np.log10(b), num=num) << u.keV
     photon_flux = broken_power(
         energy_edges=energies,
-        reference_energy=NUSTAR_REF_ENERGY,
-        reference_flux=(normalization_at_1kev << u.ph / u.cm**2 / u.keV / u.s),
+        norm_energy=NUSTAR_REF_ENERGY,
+        norm_flux=(normalization_at_1kev << u.ph / u.cm**2 / u.keV / u.s),
         break_energy=(1 << u.MeV),
         lower_index=power_law_index,
         upper_index=0

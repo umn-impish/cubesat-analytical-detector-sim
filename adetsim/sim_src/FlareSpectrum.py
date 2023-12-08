@@ -2,8 +2,7 @@ from typing import Tuple
 import astropy.units as u
 import functools
 import numpy as np
-# from .sswidl_bridge import battaglia_power_law_with_pivot, f_vth_bridge
-import sunxspex.thermal as thermal
+import sunkit_spex.thermal as thermal
 
 GOES_PREFIX = {
     'A': 1e-8,
