@@ -11,6 +11,8 @@ import sys
 fig_dir = 'figs'
 os.makedirs(fig_dir, exist_ok=True)
 
+plt.style.use(os.getenv('MPL_INTERACTIVE_STYLE'))
+
 with open(sys.argv[1], 'rb') as f:
     dat = pickle.load(f)
 
@@ -40,7 +42,7 @@ for (ax, (goes_class, sub_dat)) in zip(axs, dat['dat'].items()):
 
     ax.set(
         xlabel='energy (keV)', ylabel='ct',
-        title=f'Al x-123 attenuator | {goes_class}',
+        title=f'{goes_class} GOES class simulated flare',
         xscale='log', yscale='log',
         ylim=(1, None)
     )
@@ -49,4 +51,4 @@ for (ax, (goes_class, sub_dat)) in zip(axs, dat['dat'].items()):
 diam = 2*rad
 fig.suptitle(rf'counts in {integration_time} integration, aperture Ø = {diam*1e4:.1f}um, pinhole Ø = {dat["diameter"]:.2f}')
 plt.show()
-# fig.savefig(f'{fig_dir}/{integration_time.value}s-{diam*1e4:.1f}um.png', dpi=300)
+fig.savefig(f'{fig_dir}/{integration_time.value}s-{diam*1e4:.1f}um.pdf', dpi=300)

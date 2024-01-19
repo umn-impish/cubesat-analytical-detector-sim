@@ -57,13 +57,13 @@ if __name__ == '__main__':
     # w
     # thicks = np.array([1, 2, 3, 4, 5]) << u.micron
     # au
-    # thicks = np.array([1, 2, 3, 4, 5]) << u.micron
+    thicks = np.array([1, 3, 5]) << u.micron
     # ti
-    thicks = np.array([5, 10, 15, 20, 25, 30]) << u.micron
-    edges = np.arange(3.5, 20, 0.02) << u.keV
-    diam = 5 << u.micron
+    # thicks = np.array([5, 10, 20]) << u.micron
+    edges = np.arange(1.1, 20, 0.02) << u.keV
+    diam = 50 << u.micron
 
-    mat_key = hmp.TI
+    mat_key = hmp.AU
     attenuator = Material(
         diameter=NotImplemented,
         attenuation_thickness=NotImplemented,
