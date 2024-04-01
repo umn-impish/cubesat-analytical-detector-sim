@@ -1,11 +1,18 @@
 import os
+import sys
 import numpy as np
 from adetsim.hafx_src.HafxSimulationContainer import HafxSimulationContainer
+
+'''
+Computes the counts incident on the CeBr3 IMPRESS detectors given a lower and upper energy boud.
+'''
 
 ENG_LOWER_BOUND = 14
 ENG_UPPER_BOUND = 300
 CEBR3_AREA = 43/4
-opt_dir = f'{os.path.dirname(__file__)}/../responses-and-areas/optimized-2022-aug-22-bins'
+
+# Directory which contains pickled outputs
+opt_dir = sys.argv[1]
 filez = os.listdir(opt_dir)
 
 portion_sizes = [13, 33, 18, 38]

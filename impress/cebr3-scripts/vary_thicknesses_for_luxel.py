@@ -1,3 +1,10 @@
+'''
+This script perturbs our "desired" attenuator thicknesses by some small amount (10%)
+to see the effect on collected photons.
+
+Not very useful now...
+'''
+
 import astropy.units as u
 import numpy as np
 import sys
