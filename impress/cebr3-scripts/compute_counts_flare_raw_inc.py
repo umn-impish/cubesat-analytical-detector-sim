@@ -1,6 +1,10 @@
 import numpy as np
 from adetsim.sim_src.FlareSpectrum import FlareSpectrum
 
+'''
+Compute the count rate of a Battaglia model flare given a start and end energy.
+'''
+
 goes_class = 'X1'
 start_energy = 1
 end_energy = 100

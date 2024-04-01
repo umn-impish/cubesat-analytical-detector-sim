@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import sys
 import scipy.integrate
 from adetsim.hafx_src.HafxSimulationContainer import HafxSimulationContainer
 from adetsim.hafx_src.HafxMaterialProperties import SINGLE_DET_AREA
@@ -13,7 +14,7 @@ def pileup_fraction_estimate(count_rate, pileup_time):
     # integrate probability density function from 0 to the pileup time
     return scipy.integrate.quad(pdf, 0, pileup_time)
 
-optim_dir = '../responses-and-areas/optimized-2022-aug-22-bins'
+optim_dir = sys.argv[1]
 pileup_time = 1 * 1e-6       # microsecond
 opt_files = os.listdir(optim_dir)
 

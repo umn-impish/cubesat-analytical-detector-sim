@@ -38,12 +38,7 @@ class HafxSimulationContainer:
     def from_saved_file(cls, filename: str, remake_spectrum=False):
         ''' load the container from a (compressed) .npz file '''
         data = np.load(filename, allow_pickle=True)
-        try:
-            goes_class = str(data[cls.KGOES_CLASS])
-        except KeyError as e:
-            print("KeyError:", '; '.join(e.args))
-            # some old sims didn't save the GOES class explicitly
-            goes_class = filename.split('_')[-3]
+        goes_class = str(data[cls.KGOES_CLASS])
 
         if remake_spectrum:
             edges = data[cls.KENERGY_EDGES]
