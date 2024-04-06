@@ -35,8 +35,8 @@ class Material:
         return modify_gen_lookup[mechanism_type](incident_spectrum)
 
     def _gen_phot_ray(self, which, incident_spectrum: FlareSpectrum) -> np.ndarray:
-        interp_log_att_funcs = self.attenuation_data.interpolate_from(incident_spectrum)
-        log_att = interp_log_att_funcs[which]
+        # Log attenuation function (to interpolaetaeaeae)
+        log_att = lambda e: self.attenuation_data.log_interpolate(which, e)
 
         def mass_att_exponent(log_energy):
             return -1 * np.exp(log_att(log_energy)) * self.mass_density * self.thickness
