@@ -7,7 +7,7 @@ from ..sim_src.Material import Material
 
 from .HafxMaterialProperties import \
     HAFX_MATERIAL_ORDER, AL, THICKNESSES, \
-    DENSITIES, ATTEN_FILES, DIAMETER
+    DENSITIES, ATTEN_FORMULAS, DIAMETER
 from .Sipm3000 import Sipm3000
 
 
@@ -18,7 +18,7 @@ def gen_materials(att_thick: np.float64):
     for name in mat_order:
         thick = att_thick if name == AL else THICKNESSES[name]
         rho = DENSITIES[name]
-        atten_dat = AttenuationData.from_nist_file(ATTEN_FILES[name])
+        atten_dat = AttenuationData.from_compound_dict(ATTEN_FORMULAS[name])
         materials.append(Material(DIAMETER, thick, rho, atten_dat, name=name))
     return materials
 
