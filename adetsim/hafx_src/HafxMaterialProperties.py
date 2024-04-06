@@ -29,18 +29,16 @@ THICKNESSES = {
     # aluminum is special so we leave it out
 }
 
-ATTEN_DIR = 'all-attenuation-data/attenuation-data-files'
-ATTEN_BASENAMES = [AL, TEF, BE, CEBR3, SI, CDTE, AU, W, TI]
-
-# attenuation data from:
-#   looked here for reference: https://www.nist.gov/pml/x-ray-mass-attenuation-coefficients
-#   took data from here: https://physics.nist.gov/PhysRefData/Xcom/html/xcom1.html
-#   nb attenuation data must be in same folder as this file. probably should rework this at some point. (lol not gonna happen, sep2021)
-ATTEN_FILES = {
-    abn: os.path.join(
-        os.path.dirname(__file__),
-        ATTEN_DIR,
-        f"{abn}.tab") for abn in ATTEN_BASENAMES
+ATTEN_FORMULAS = {
+    AL: {'Al': 1},
+    AU: {'Au': 1},
+    TEF: {'C': 2, 'F': 4},
+    BE: {'Be': 1},
+    CEBR3: {'Ce': 1, 'Br': 3},
+    SI: {'Si': 1},
+    CDTE: {'Cd': 1, 'Te': 1},
+    W: {'W': 1},
+    TI: {'Ti', 1}
 }
 
 # all g/cm3
@@ -56,7 +54,6 @@ DENSITIES = {
     TI: 4.5
 }
 
-FULL_AREA = 43                                  # cm2 
-SINGLE_DET_AREA = FULL_AREA / 4                 # cm2
-DIAMETER = 3.7                                  # cm
-METER_PER_CM = 1e2                              # cm per meter
+FULL_AREA = 43                   # cm2 
+SINGLE_DET_AREA = FULL_AREA / 4  # cm2
+DIAMETER = 3.7                   # cm

@@ -23,14 +23,16 @@ class X123CdTeStack(DetectorStack):
                 diameter=self.X123_DIAMETER,
                 attenuation_thickness=self.BE_THICK,
                 mass_density=hmp.DENSITIES[hmp.BE],
-                attenuation_data=AttenuationData.from_nist_file(hmp.ATTEN_FILES[hmp.BE])
+                attenuation_data=AttenuationData.from_compound_dict(
+                    hmp.ATTEN_FORMULAS[hmp.BE])
             )
         ]
         self.detector_volume = Material(
             diameter=self.X123_DIAMETER,
             attenuation_thickness=self.DET_THICK,
             mass_density=hmp.DENSITIES[hmp.CDTE],
-            attenuation_data=AttenuationData.from_nist_file(hmp.ATTEN_FILES[hmp.CDTE])
+            attenuation_data=AttenuationData.from_compound_dict(
+                hmp.ATTEN_FORMULAS[hmp.CDTE])
         )
         super().__init__(
             materials,

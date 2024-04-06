@@ -68,7 +68,8 @@ if __name__ == '__main__':
         diameter=NotImplemented,
         attenuation_thickness=NotImplemented,
         mass_density=hmp.DENSITIES[mat_key],
-        attenuation_data=AttenuationData.from_nist_file(hmp.ATTEN_FILES[mat_key]),
+        attenuation_data=AttenuationData.from_compound_dict(
+            hmp.ATTEN_FORMULAS[mat_key]),
         name=mat_key
     )
 

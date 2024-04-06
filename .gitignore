@@ -1,3 +1,4 @@
+*.pkl
 *.swp
 .DS_Store
 *.csv
@@ -22,6 +23,7 @@ cdfs
 responses
 flare-data
 rebinned-srms
+element_cache
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

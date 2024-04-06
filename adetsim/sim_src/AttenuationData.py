@@ -1,6 +1,8 @@
+import astropy.units as u
 import numpy as np
 from scipy import interpolate
-from .FlareSpectrum import FlareSpectrum
+
+from . import material_manager as mman
 
 class AttenuationType:
     PHOTOELECTRIC_ABSORPTION = 1
@@ -19,41 +21,65 @@ class AttenuationType:
 
 class AttenuationData:
     @classmethod
-    def from_nist_file(cls, file_path: str):
+    def from_compound_dict(cls, compound: dict[str, float]):
         '''
-        assumes:
-            - tab-delimited
-            - energy first col
-            - photoelectric attenuation second col
-            - rayleigh third col
-            - compton fourth col
+        Construct an AttenuationData using the same compound format as
+        in `material_manager`.
         '''
-        # "unpack" transposes the file contents
-        energies, photo, rayleigh, compton = np.loadtxt(file_path, dtype=np.float64, unpack=True)
-        return cls(energies, photo, rayleigh, compton)
+        weighted_coeffs = mman.fetch_compound(compound)
+        for (name, coeffs) in weighted_coeffs.items():
+            clean = {
+                'energy': coeffs['energy'].to_value(u.keV),
+            }
+            for k in ('rayleigh', 'compton', 'photoelectric'):
+                clean[k] = coeffs[k].to_value(u.cm**2 / u.g)
+            weighted_coeffs[name] = clean
+        return AttenuationData(weighted_coeffs)
 
-    def __init__(self, energies: np.ndarray, photoelec: np.ndarray, rayleigh: np.ndarray, compton: np.ndarray):
-        '''call this or the from_file class method to construct the object'''
-        self.energies = energies
+    def __init__(self, coefficients: dict[str, dict[str, np.ndarray]]):
+        '''Do not call this directly.'''
+        self.energies = dict()
         self.attenuations = dict()
-        self.attenuations[AttenuationType.PHOTOELECTRIC_ABSORPTION] = photoelec
-        self.attenuations[AttenuationType.RAYLEIGH] = rayleigh
-        self.attenuations[AttenuationType.COMPTON] = compton
+        for (k, data) in coefficients.items():
+            self.energies[k] = data['energy']
+            if k not in self.attenuations:
+                self.attenuations[k] = dict()
 
-    def interpolate_from(self, incident_flare: FlareSpectrum) -> dict:
-        ''' interpolate standard data to fit given incident_flare energy spectrum
-            returns a function that interpolates log of attenuation
-            data (to be integrated or evaluated)
+            self.attenuations[k][
+                AttenuationType.PHOTOELECTRIC_ABSORPTION] = data['photoelectric']
+            self.attenuations[k][
+                AttenuationType.RAYLEIGH] = data['rayleigh']
+            self.attenuations[k][
+                AttenuationType.COMPTON] = data['compton']
+        
+        self.setup_interpolators()
+
+    def setup_interpolators(self):
+        ''' returns a function that interpolates log of attenuation
+            data (to be integrated or evaluated),
+            one per element
         '''
-        interp_log_att_funcs = dict()
-        for key, att in self.attenuations.items():
-            # interpolate between NIST energies
-            # we want straight-line interpolation on the log plot,
-            # so take the log before doing any fitting
-            loge, logat = np.log(self.energies), np.log(att)
-            interp_func = interpolate.interp1d(
-                x=loge, y=logat,
-                fill_value="extrapolate"
-            )
-            interp_log_att_funcs[key] = interp_func
-        return interp_log_att_funcs
+        interp_log_att_funcs = {k: [] for k in AttenuationType.ALL}
+        for (name, data) in self.attenuations.items():
+            energies = self.energies[name]
+            for key, att in data.items():
+                # interpolate between NIST energies
+                # we want straight-line interpolation on the log plot,
+                # so take the log before doing any fitting
+                loge, logat = np.log(energies), np.log(att)
+                interp_func = interpolate.interp1d(
+                    x=loge, y=logat,
+                    fill_value="extrapolate"
+                )
+                interp_log_att_funcs[key].append(interp_func)
+        
+        self.log_interpolators = interp_log_att_funcs
+
+    def log_interpolate(self, att_type, log_energies) -> np.ndarray:
+        '''
+        Log-interpolate a given attenuation type to a set of log energies.
+        '''
+        ret = np.zeros_like(log_energies)
+        for f in self.log_interpolators[att_type]:
+            ret += np.exp(f(log_energies))
+        return np.log(ret)
