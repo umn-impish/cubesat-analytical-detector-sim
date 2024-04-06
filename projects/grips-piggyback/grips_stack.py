@@ -7,18 +7,20 @@ from adetsim.sim_src import Material as mat
 from adetsim.hafx_src import FixedEnergyResolutionDetector as ferd
 from adetsim.hafx_src import HafxMaterialProperties as hmp
 
-ATT_DIR = 'att-data/cleaned'
-att_concat = lambda s: f'{ATT_DIR}/{s}'
-MAT_FNS = {
-    'teflon': att_concat('teflon.txt'),
-    'pla': att_concat('pla.txt'),
-    'gagg': att_concat('gagg.txt'),
-    'lyso': att_concat('lyso.txt')
+MAT_FORMULAS = {
+    'teflon': {'C': 2, 'F': 4},
+    'pla': {'C': 3, 'H': 4, 'O': 2},
+    'gagg': {
+        'Gd': 2.9995, 'Ce': 0.0005, 'Al': 2, 'Ga': 5, 'O': 12
+    },
+    'lyso': {
+        'Lu': 1.98, 'Y': 0.02, 'Si': 1, 'O': 5
+    }
 }
 
 MAT_DAT = {
-    k: ad.AttenuationData.from_nist_file(v)
-    for (k, v) in MAT_FNS.items()
+    k: ad.AttenuationData.from_compound_dict(d)
+    for (k, d) in MAT_FORMULAS.items()
 }
 
 MAT_DENS = {
@@ -30,7 +32,10 @@ MAT_DENS = {
 }
 
 class GripsStack(ds.DetectorStack):
-    DIAMETER = 2 # cm
+    # We have 4 x 4cm2 squares.
+    # The equivalent circle has radius sqrt(16 / pi) cm
+    # Or diameter of 2r = 2 * 2.26 = 4.52 cm2.
+    DIAMETER = 4.52 # cm
     def __init__(self, stack_mats: dict[str, float]):
         det_mats = ('lyso', 'gagg')
         self.detector = None
@@ -40,7 +45,7 @@ class GripsStack(ds.DetectorStack):
                 diameter=GripsStack.DIAMETER,
                 attenuation_thickness=t,
                 mass_density=MAT_DENS[n] if n in MAT_DENS else hmp.DENSITIES[n],
-                attenuation_data=MAT_DAT[n] if n in MAT_DAT else ad.AttenuationData.from_nist_file(hmp.ATTEN_FILES[n]),
+                attenuation_data=MAT_DAT[n] if n in MAT_DAT else ad.AttenuationData.from_compound_dict(hmp.ATTEN_FORMULAS[n]),
                 name=n
             )
             if n not in det_mats:
