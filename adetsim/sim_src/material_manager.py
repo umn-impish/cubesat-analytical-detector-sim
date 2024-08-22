@@ -1,3 +1,4 @@
+import copy
 import os
 import requests
 
@@ -133,4 +134,4 @@ def load_element_data(fn: str) -> dict[str, u.Quantity]:
     # Keys we wanna keep from the data file
     keep = ['energy', 'photoelectric', 'compton', 'rayleigh']
     with asdf.open(fn) as f:
-        return {k: f[k] for k in keep}
+        return {k: copy.deepcopy(f[k]) for k in keep}
