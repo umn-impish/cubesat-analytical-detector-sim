@@ -118,9 +118,10 @@ def decode_nist_response(txt: str) -> dict[str, u.Quantity]:
     energy, ray, comp, photo = np.array(list(reversed(data))).T
     # Some absorption edges have two energy values really close
     # Make them a little further apart for numerics
+    eps = 1e-10
     for i in range(energy.size-1):
-        if (energy[i] - energy[i+1]) < 1e-6:
-            energy[i+1] += 1e-6
+        if np.abs(energy[i] - energy[i+1]) < eps:
+            energy[i+1] += eps
     return {
         'energy': energy << u.MeV,
         'rayleigh': ray << u.cm**2 / u.g,
