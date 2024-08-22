@@ -2,7 +2,10 @@ from typing import Tuple
 import astropy.units as u
 import functools
 import numpy as np
-import sunkit_spex.thermal as thermal
+try:
+    import sunkit_spex.thermal as thermal
+except ModuleNotFoundError:
+    import sunkit_spex.legacy.thermal as thermal
 
 GOES_PREFIX = {
     'A': 1e-8,
